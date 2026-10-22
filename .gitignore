@@ -1,0 +1,75 @@
+# ===== Secrets & environment (NEVER commit) =====
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+secrets/
+config.local.yml
+config.local.*
+credentials.json
+service-account*.json
+
+# ===== IDE / Editor =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+desktop.ini
+*:Zone.Identifier
+
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.sqlite3
+*.db
+
+# ===== Node =====
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.npm/
+.next/
+coverage/
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== Terraform =====
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+.terraformrc
+
+# ===== Logs & build artifacts =====
+*.log
+logs/
+tmp/
+temp/
+out/
+
+# ===== Team admin files (not part of the codebase) =====
+*.xlsx
+*.xls
