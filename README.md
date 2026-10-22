@@ -100,7 +100,7 @@ curl "http://localhost:8000/quiz/math?count=5"
 
 ## Links
 
-- [Project Board](https://github.com/jacobelohe/Formative1-Project-Foundation-Secure-Collaboration/projects) _(replace with the board URL)_
+- [Project Board](https://github.com/users/jacobelohe/projects/1)
 - [Board plan](docs/BOARD.md)
 
 ## License
