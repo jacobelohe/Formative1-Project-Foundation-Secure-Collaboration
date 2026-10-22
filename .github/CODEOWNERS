@@ -1,0 +1,9 @@
+# Every file needs review from the owner of that area.
+*                       @jacobelohe
+/services/quiz-api/     @Mugisha-Joshua @jacobelohe
+/services/ussd-gateway/ @Zoulou1 @jacobelohe
+/.github/               @jacobelohe
+/docs/                  @jacobelohe
+/infra/                 @olaniyiolufemi @jacobelohe
+/Dockerfile             @olaniyiolufemi
+/docker-compose.yml     @olaniyiolufemi
