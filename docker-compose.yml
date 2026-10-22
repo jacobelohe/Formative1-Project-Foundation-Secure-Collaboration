@@ -1,0 +1,11 @@
+services:
+  quiz-api:
+    build:
+      context: ./services/quiz-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_PORT=8000
+      - APP_ENV=development
+    restart: unless-stopped
