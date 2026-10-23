@@ -70,6 +70,5 @@ tmp/
 temp/
 out/
 
-# ===== Team admin files (not part of the codebase) =====
-*.xlsx
+# ===== Team admin files =====
 *.xls
