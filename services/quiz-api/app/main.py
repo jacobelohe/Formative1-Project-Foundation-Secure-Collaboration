@@ -2,10 +2,16 @@ import random
 from fastapi import FastAPI, HTTPException, Query
 from .db import QUESTIONS
 from .models import SubmitRequest
+from .scoring import ScoringError, score_answers
 
 app = FastAPI(title="SomaQuiz API")
 
-_by_id: dict[int, dict] = {q["id"]: q for q in QUESTIONS}
+
+def _questions_for(subject: str) -> list[dict]:
+    pool = [q for q in QUESTIONS if q["subject"] == subject.lower()]
+    if not pool:
+        raise HTTPException(status_code=404, detail=f"Subject '{subject}' not found.")
+    return pool
 
 
 @app.get("/")
@@ -21,8 +27,7 @@ def health():
 @app.get("/subjects")
 def list_subjects():
     """Issue #4 — list available subjects."""
-    subjects = sorted({q["subject"] for q in QUESTIONS})
-    return {"subjects": subjects}
+    return sorted({q["subject"] for q in QUESTIONS})
 
 
 @app.get("/quiz/{subject}")
@@ -30,13 +35,11 @@ def get_quiz(
     subject: str,
     count: int = Query(default=5, ge=1, le=20),
 ):
-    """Issue #5 — return N random questions for a subject."""
-    pool = [q for q in QUESTIONS if q["subject"] == subject.lower()]
-    if not pool:
-        raise HTTPException(status_code=404, detail=f"Subject '{subject}' not found.")
+    """Issue #5 — return N random questions for a subject (answers hidden)."""
+    pool = _questions_for(subject)
     sample = random.sample(pool, min(count, len(pool)))
     return {
-        "subject": subject,
+        "subject": subject.lower(),
         "count": len(sample),
         "questions": [
             {"id": q["id"], "question": q["question"], "options": q["options"]}
@@ -45,31 +48,11 @@ def get_quiz(
     }
 
 
-@app.post("/submit")
-def submit_answers(payload: SubmitRequest):
+@app.post("/quiz/{subject}/submit")
+def submit_answers(subject: str, payload: SubmitRequest):
     """Issue #6 — score answers and return per-question explanations."""
-    results = []
-    correct = 0
-
-    for item in payload.answers:
-        q = _by_id.get(item.id)
-        if not q:
-            raise HTTPException(status_code=404, detail=f"Question id {item.id} not found.")
-        is_correct = item.answer.strip() == q["answer"]
-        if is_correct:
-            correct += 1
-        results.append({
-            "id": item.id,
-            "correct": is_correct,
-            "your_answer": item.answer,
-            "correct_answer": q["answer"],
-            "explanation": q["explanation"],
-        })
-
-    total = len(payload.answers)
-    return {
-        "score": correct,
-        "total": total,
-        "percentage": round(correct / total * 100, 1) if total else 0,
-        "results": results,
-    }
+    pool_by_id = {q["id"]: q for q in _questions_for(subject)}
+    try:
+        return score_answers([(a.id, a.answer) for a in payload.answers], pool_by_id)
+    except ScoringError as err:
+        raise HTTPException(status_code=422, detail=str(err))
