@@ -2,14 +2,6 @@
 
 > Exam practice that works on any phone, with or without a smartphone.
 
----
-
-## 📋 Team Participation Sheet
-
-> **[👉 View Team Participation Sheet](https://docs.google.com/spreadsheets/d/1T84KL2_JWtcByxihPB16qP5hJUZ8BI4qkjxJ-HTExCI/edit?usp=sharing)**
-
----
-
 ## African Context
 
 Millions of secondary-school students across Africa sit national exams (WAEC, KCSE, NECTA, Rwanda National Exams, and others), yet quality past-paper practice is expensive, scattered across heavy PDFs, or locked behind costly data bundles. Many students own only a low-end or feature phone, and phones are often shared within a household. SomaQuiz offers lightweight quizzes with instant marking and explanations, delivered through a small web app **and** a USSD-style text menu that needs no smartphone and almost no data. ("Soma" means "read/study" in Swahili.)
