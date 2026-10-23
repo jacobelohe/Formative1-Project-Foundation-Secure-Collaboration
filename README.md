@@ -10,7 +10,7 @@ Millions of secondary-school students across Africa sit national exams (WAEC, KC
 
 | Name | Role | GitHub | Student ID |
 |---|---|---|---|
-| Jacob Elohe | Team lead: repo security, CI/branch rules, documentation | [@jacobelohe](https://github.com/jacobelohe) | _add_ |
+| Jacob Ndayishimiye | Team lead: repo security, CI/branch rules, documentation | [@jacobelohe](https://github.com/jacobelohe) | _add_ |
 | Joshua Ochel Mugisha | Backend: quiz API and scoring | [@Mugisha-Joshua](https://github.com/Mugisha-Joshua) | _add_ |
 | Ewing Keylan | USSD menu, tests | [@Zoulou1](https://github.com/Zoulou1) | _add_ |
 | Olaniyi Olufemi | DevOps: Docker, GitHub Actions, Terraform | [@olaniyiolufemi](https://github.com/olaniyiolufemi) | _add_ |
