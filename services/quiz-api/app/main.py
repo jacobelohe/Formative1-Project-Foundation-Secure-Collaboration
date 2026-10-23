@@ -1,15 +1,21 @@
 from fastapi import FastAPI
+from .db import QUESTIONS
 
-app = FastAPI(title="SomaQuiz Quiz API")
+app = FastAPI(title="SomaQuiz API")
+
 
 @app.get("/")
-def read_root():
+def root():
     return {"status": "ok", "service": "quiz-api"}
 
+
 @app.get("/health")
-def health_check():
+def health():
     return {"status": "healthy"}
 
+
 @app.get("/subjects")
-def get_subjects():
-    return []
+def list_subjects():
+    """Issue #4 — list available subjects."""
+    subjects = sorted({q["subject"] for q in QUESTIONS})
+    return {"subjects": subjects}
