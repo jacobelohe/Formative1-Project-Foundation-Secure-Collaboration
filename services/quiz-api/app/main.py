@@ -1,8 +1,11 @@
 import random
 from fastapi import FastAPI, HTTPException, Query
 from .db import QUESTIONS
+from .models import SubmitRequest
 
 app = FastAPI(title="SomaQuiz API")
+
+_by_id: dict[int, dict] = {q["id"]: q for q in QUESTIONS}
 
 
 @app.get("/")
@@ -39,4 +42,34 @@ def get_quiz(
             {"id": q["id"], "question": q["question"], "options": q["options"]}
             for q in sample
         ],
+    }
+
+
+@app.post("/submit")
+def submit_answers(payload: SubmitRequest):
+    """Issue #6 — score answers and return per-question explanations."""
+    results = []
+    correct = 0
+
+    for item in payload.answers:
+        q = _by_id.get(item.id)
+        if not q:
+            raise HTTPException(status_code=404, detail=f"Question id {item.id} not found.")
+        is_correct = item.answer.strip() == q["answer"]
+        if is_correct:
+            correct += 1
+        results.append({
+            "id": item.id,
+            "correct": is_correct,
+            "your_answer": item.answer,
+            "correct_answer": q["answer"],
+            "explanation": q["explanation"],
+        })
+
+    total = len(payload.answers)
+    return {
+        "score": correct,
+        "total": total,
+        "percentage": round(correct / total * 100, 1) if total else 0,
+        "results": results,
     }
