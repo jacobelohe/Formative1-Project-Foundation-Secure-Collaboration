@@ -1,0 +1,172 @@
+[
+  {
+    "id": 1,
+    "subject": "math",
+    "question": "What is the value of x if 2x + 3 = 11?",
+    "options": ["2", "3", "4", "5"],
+    "answer": "4",
+    "explanation": "2x = 11 - 3 = 8, so x = 4."
+  },
+  {
+    "id": 2,
+    "subject": "math",
+    "question": "What is 15% of 200?",
+    "options": ["20", "25", "30", "35"],
+    "answer": "30",
+    "explanation": "15/100 × 200 = 30."
+  },
+  {
+    "id": 3,
+    "subject": "math",
+    "question": "Simplify: 3(2x - 4) = 18. What is x?",
+    "options": ["3", "4", "5", "6"],
+    "answer": "5",
+    "explanation": "6x - 12 = 18 → 6x = 30 → x = 5."
+  },
+  {
+    "id": 4,
+    "subject": "math",
+    "question": "What is the area of a circle with radius 7? (π ≈ 22/7)",
+    "options": ["144", "154", "164", "174"],
+    "answer": "154",
+    "explanation": "Area = πr² = (22/7) × 49 = 154."
+  },
+  {
+    "id": 5,
+    "subject": "math",
+    "question": "What is the LCM of 4 and 6?",
+    "options": ["8", "10", "12", "24"],
+    "answer": "12",
+    "explanation": "Multiples of 4: 4,8,12… Multiples of 6: 6,12… LCM = 12."
+  },
+  {
+    "id": 6,
+    "subject": "english",
+    "question": "Choose the correct sentence:",
+    "options": [
+      "She don't like mangoes.",
+      "She doesn't likes mangoes.",
+      "She doesn't like mangoes.",
+      "She not like mangoes."
+    ],
+    "answer": "She doesn't like mangoes.",
+    "explanation": "Third-person singular present uses 'doesn't' + base verb."
+  },
+  {
+    "id": 7,
+    "subject": "english",
+    "question": "What is the plural of 'child'?",
+    "options": ["childs", "childes", "children", "childrens"],
+    "answer": "children",
+    "explanation": "'Child' has the irregular plural 'children'."
+  },
+  {
+    "id": 8,
+    "subject": "english",
+    "question": "Which word is a synonym for 'happy'?",
+    "options": ["sad", "angry", "joyful", "tired"],
+    "answer": "joyful",
+    "explanation": "'Joyful' means feeling great happiness, same as 'happy'."
+  },
+  {
+    "id": 9,
+    "subject": "english",
+    "question": "Identify the noun in: 'The dog barked loudly.'",
+    "options": ["barked", "loudly", "the", "dog"],
+    "answer": "dog",
+    "explanation": "'Dog' is the noun — it names the subject of the sentence."
+  },
+  {
+    "id": 10,
+    "subject": "english",
+    "question": "What punctuation ends a question?",
+    "options": [".", "!", "?", ","],
+    "answer": "?",
+    "explanation": "A question mark (?) is used at the end of a direct question."
+  },
+  {
+    "id": 11,
+    "subject": "biology",
+    "question": "What is the powerhouse of the cell?",
+    "options": ["Nucleus", "Ribosome", "Mitochondria", "Vacuole"],
+    "answer": "Mitochondria",
+    "explanation": "Mitochondria produce ATP through cellular respiration."
+  },
+  {
+    "id": 12,
+    "subject": "biology",
+    "question": "Which blood type is the universal donor?",
+    "options": ["A", "B", "AB", "O"],
+    "answer": "O",
+    "explanation": "Type O negative red cells can be given to patients of any blood type."
+  },
+  {
+    "id": 13,
+    "subject": "biology",
+    "question": "How many chromosomes does a normal human cell have?",
+    "options": ["23", "44", "46", "48"],
+    "answer": "46",
+    "explanation": "Humans have 46 chromosomes arranged in 23 pairs."
+  },
+  {
+    "id": 14,
+    "subject": "biology",
+    "question": "What process do plants use to make food?",
+    "options": ["Respiration", "Photosynthesis", "Digestion", "Transpiration"],
+    "answer": "Photosynthesis",
+    "explanation": "Plants convert sunlight, CO₂, and water into glucose via photosynthesis."
+  },
+  {
+    "id": 15,
+    "subject": "biology",
+    "question": "Which organ filters blood in the human body?",
+    "options": ["Heart", "Liver", "Kidney", "Lung"],
+    "answer": "Kidney",
+    "explanation": "Kidneys filter waste products from the blood and produce urine."
+  },
+  {
+    "id": 16,
+    "subject": "history",
+    "question": "In which year did Rwanda gain independence?",
+    "options": ["1960", "1962", "1964", "1966"],
+    "answer": "1962",
+    "explanation": "Rwanda gained independence from Belgium on 1 July 1962."
+  },
+  {
+    "id": 17,
+    "subject": "history",
+    "question": "Who was the first President of Kenya?",
+    "options": ["Daniel arap Moi", "Jomo Kenyatta", "Raila Odinga", "Uhuru Kenyatta"],
+    "answer": "Jomo Kenyatta",
+    "explanation": "Jomo Kenyatta became Kenya's first President in 1964."
+  },
+  {
+    "id": 18,
+    "subject": "history",
+    "question": "The Berlin Conference of 1884-85 was about:",
+    "options": [
+      "World War I peace terms",
+      "Partition of Africa among European powers",
+      "Formation of the United Nations",
+      "End of the slave trade"
+    ],
+    "answer": "Partition of Africa among European powers",
+    "explanation": "European powers met in Berlin to divide Africa without African representation."
+  },
+  {
+    "id": 19,
+    "subject": "history",
+    "question": "Which country colonised Tanzania (Tanganyika)?",
+    "options": ["France", "Britain", "Germany then Britain", "Portugal"],
+    "answer": "Germany then Britain",
+    "explanation": "Germany colonised Tanganyika until WWI; Britain took over under a League of Nations mandate."
+  },
+  {
+    "id": 20,
+    "subject": "history",
+    "question": "The Organisation of African Unity (OAU) was founded in:",
+    "options": ["1945", "1957", "1963", "1970"],
+    "answer": "1963",
+    "explanation": "The OAU was founded on 25 May 1963 in Addis Ababa, Ethiopia."
+  }
+]
