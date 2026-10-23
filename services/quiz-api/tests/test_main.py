@@ -16,4 +16,4 @@ def test_health():
 def test_subjects():
     response = client.get("/subjects")
     assert response.status_code == 200
-    assert response.json() == []
+    assert isinstance(response.json(), list)

@@ -11,5 +11,5 @@ output "aws_region" {
 }
 
 output "service_name" {
-  value = locals.service_name
+  value = local.service_name
 }
