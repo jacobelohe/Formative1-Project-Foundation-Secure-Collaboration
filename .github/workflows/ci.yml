@@ -1,17 +1,26 @@
 name: CI
 
+# Run on pushes to every branch except main, and on pull requests that target main.
+# Pull requests are validated here before they can be merged (see branch protection).
 on:
+  push:
+    branches-ignore:
+      - main
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
 
+# Least privilege: the workflow token can only read the repository.
 permissions:
   contents: read
 
+# Cancel an older run of the same branch/PR when a new commit is pushed.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # Fails the pipeline on any lint error.
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +31,7 @@ jobs:
       - run: pip install ruff
       - run: ruff check .
 
+  # Fails the pipeline if any test fails.
   test:
     runs-on: ubuntu-latest
     steps:
@@ -29,11 +39,31 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip # reuse downloaded packages between runs
+          cache-dependency-path: services/quiz-api/requirements*.txt
       - run: pip install -r services/quiz-api/requirements-dev.txt
       - run: PYTHONPATH=services/quiz-api pytest
 
+  # Fails the pipeline if the image does not build, or the container does not
+  # become healthy when started through Docker Compose.
   docker-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose build
+      - name: Build image
+        run: docker compose build
+      - name: Smoke test the container
+        run: |
+          docker compose up -d
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then
+              echo "API is healthy"
+              docker compose down
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy" >&2
+          docker compose logs
+          docker compose down
+          exit 1
