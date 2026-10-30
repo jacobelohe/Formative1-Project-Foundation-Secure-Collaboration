@@ -5,7 +5,7 @@ import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from ussd_menu import handle_session  # noqa: E402
+from ussd_menu import handle_session
 
 
 def test_empty_session_shows_subjects():

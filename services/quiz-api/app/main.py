@@ -1,5 +1,7 @@
 import random
+
 from fastapi import FastAPI, HTTPException, Query
+
 from .db import QUESTIONS
 from .models import SubmitRequest
 from .scoring import ScoringError, score_answers
