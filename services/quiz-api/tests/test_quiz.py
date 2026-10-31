@@ -45,3 +45,7 @@ def test_submit_rejects_duplicate_ids():
 def test_submit_rejects_question_from_other_subject():
     res = client.post("/quiz/math/submit", json={"answers": [{"id": 6, "answer": "x"}]})
     assert res.status_code == 422
+
+
+def test_version_endpoint():
+    assert client.get("/version").json() == {"version": "0.1.0"}
