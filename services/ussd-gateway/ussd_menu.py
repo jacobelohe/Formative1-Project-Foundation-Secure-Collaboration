@@ -1,13 +1,14 @@
 """A simple USSD-style menu for SomaQuiz."""
 
 SUBJECTS = {
-    "1": "Mathematics",
-    "2": "English",
-    "3": "Science",
+    "1": "math",
+    "2": "english",
+    "3": "biology",
+    "4": "history",
 }
 
 QUESTIONS = {
-    "1": [
+    "math": [
         {
             "question": "What is 2 + 2?",
             "options": ["3", "4", "5"],
@@ -17,7 +18,7 @@ QUESTIONS = {
             "options": ["6", "9", "12"],
         },
     ],
-    "2": [
+    "english": [
         {
             "question": "Choose the noun: The farmer plants maize.",
             "options": ["farmer", "plants", "the"],
@@ -27,7 +28,7 @@ QUESTIONS = {
             "options": ["late", "quick", "soon"],
         },
     ],
-    "3": [
+    "biology": [
         {
             "question": "Which organ pumps blood?",
             "options": ["Lungs", "Heart", "Kidney"],
@@ -37,11 +38,21 @@ QUESTIONS = {
             "options": ["Light", "Sound", "Plastic"],
         },
     ],
+    "history": [
+        {
+            "question": "In which year did Rwanda gain independence?",
+            "options": ["1960", "1962", "1964"],
+        },
+        {
+            "question": "Who was the first President of Kenya?",
+            "options": ["Daniel arap Moi", "Jomo Kenyatta", "Uhuru Kenyatta"],
+        },
+    ],
 }
 
 
 def handle_session(session_text):
-    """Return the next menu screen for a USSD session."""
+    """Return the next screen for a USSD session."""
     if not isinstance(session_text, str):
         return "END Invalid input. Please start again."
 
@@ -51,52 +62,54 @@ def handle_session(session_text):
         return show_subjects()
 
     parts = session_text.split("*")
+    subject_number = parts[0]
+    subject = SUBJECTS.get(subject_number)
+
+    if subject is None:
+        return "END Invalid subject. Please start again."
 
     if len(parts) == 1:
-        subject_number = parts[0]
-        if subject_number not in SUBJECTS:
-            return "END Invalid subject. Please start again."
-        return show_questions(subject_number)
+        return show_questions(subject)
 
-    if len(parts) == 2:
-        subject_number = parts[0]
-        question_number = parts[1]
+    if len(parts) != 2:
+        return "END Invalid session. Please start again."
 
-        if subject_number not in SUBJECTS:
-            return "END Invalid subject. Please start again."
+    question_number = parts[1]
 
-        if not question_number.isdigit():
-            return "END Invalid question. Please start again."
+    if not question_number.isdecimal():
+        return "END Invalid question. Please start again."
 
-        question_position = int(question_number) - 1
-        subject_questions = QUESTIONS[subject_number]
+    question_position = int(question_number) - 1
+    subject_questions = QUESTIONS[subject]
 
-        if question_position < 0 or question_position >= len(subject_questions):
-            return "END Invalid question. Please start again."
+    if question_position < 0 or question_position >= len(subject_questions):
+        return "END Invalid question. Please start again."
 
-        return show_question(subject_number, question_position)
-
-    return "END Invalid session. Please start again."
+    return show_question(subject, question_position)
 
 
 def show_subjects():
     message = "CON SomaQuiz\nChoose a subject:\n"
+
     for number, subject in SUBJECTS.items():
-        message += f"{number}. {subject}\n"
+        message += f"{number}. {subject.title()}\n"
+
     return message.rstrip()
 
 
-def show_questions(subject_number):
-    message = f"CON {SUBJECTS[subject_number]}\nChoose a question:\n"
-    for number in range(len(QUESTIONS[subject_number])):
+def show_questions(subject):
+    message = f"CON {subject.title()}\nChoose a question:\n"
+
+    for number in range(len(QUESTIONS[subject])):
         message += f"{number + 1}. Question {number + 1}\n"
+
     return message.rstrip()
 
 
-def show_question(subject_number, question_position):
-    question = QUESTIONS[subject_number][question_position]
+def show_question(subject, question_position):
+    question = QUESTIONS[subject][question_position]
     message = (
-        f"CON {SUBJECTS[subject_number]}\n"
+        f"END {subject.title()}\n"
         f"Question {question_position + 1}: {question['question']}\n"
     )
 
