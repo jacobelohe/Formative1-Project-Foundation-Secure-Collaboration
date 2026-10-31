@@ -50,6 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # .env is git-ignored; create it from the committed example (no secrets in it).
+      - name: Create .env from example
+        run: cp .env.example .env
       - name: Build image
         run: docker compose build
       - name: Smoke test the container
