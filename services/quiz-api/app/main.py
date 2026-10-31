@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Query
 from .db import QUESTIONS
 from .models import SubmitRequest
 from .scoring import ScoringError, score_answers
+from .version import VERSION
 
 app = FastAPI(title="SomaQuiz API")
 
@@ -58,3 +59,8 @@ def submit_answers(subject: str, payload: SubmitRequest):
         return score_answers([(a.id, a.answer) for a in payload.answers], pool_by_id)
     except ScoringError as err:
         raise HTTPException(status_code=422, detail=str(err))
+
+
+@app.get("/version")
+def version():
+    return {"version": VERSION}
