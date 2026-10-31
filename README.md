@@ -2,6 +2,8 @@
 
 > Exam practice that works on any phone, with or without a smartphone.
 
+[![CI](https://github.com/jacobelohe/Formative1-Project-Foundation-Secure-Collaboration/actions/workflows/ci.yml/badge.svg)](https://github.com/jacobelohe/Formative1-Project-Foundation-Secure-Collaboration/actions/workflows/ci.yml)
+
 ---
 
 ## 📋 Team Participation Sheet
@@ -54,7 +56,7 @@ The code is organised as small, independent services (`quiz-api`, `ussd-gateway`
 ### Prerequisites
 - Python 3.12+
 - Git
-- Docker (optional, for the container run)
+- Docker with Compose v2 (optional, to run in a container; see [Run with Docker Compose](#run-with-docker-compose))
 
 ### Installation
 
@@ -78,14 +80,59 @@ uvicorn app.main:app --reload
 ```
 Then open http://localhost:8000/docs.
 
-> The setup commands above become fully runnable once the `quiz-api` branch (board card #4) is merged. Joshua keeps this section accurate.
+### Run with Docker Compose
+
+The whole service starts with one command. Docker builds the image from the root `Dockerfile` (multi-stage, non-root user, health check).
+
+```bash
+cp .env.example .env          # compose reads its settings from .env (git-ignored)
+docker compose up --build     # build the image and start the API on http://localhost:8000
+```
+
+Useful commands:
+
+```bash
+docker compose up -d                 # run in the background
+docker compose ps                    # shows the container and its health status
+docker compose logs -f quiz-api      # follow the logs
+docker compose down                  # stop and remove the containers (keeps the data volume)
+docker compose down -v               # also delete the named data volume
+```
+
+Check it is healthy:
+
+```bash
+curl http://localhost:8000/health    # {"status":"healthy"}
+```
+
+Run the tests on your machine (they also run in CI):
+
+```bash
+pip install -r services/quiz-api/requirements-dev.txt
+PYTHONPATH=services/quiz-api pytest
+```
 
 ### Usage
 
 ```bash
 curl http://localhost:8000/subjects
 curl "http://localhost:8000/quiz/math?count=5"
+curl -X POST http://localhost:8000/quiz/math/submit \
+  -H "Content-Type: application/json" \
+  -d '{"answers":[{"id":1,"answer":"4"},{"id":2,"answer":"30"}]}'
 ```
+
+## Continuous Integration
+
+Every push to a branch other than `main`, and every pull request that targets `main`, runs [the CI workflow](.github/workflows/ci.yml):
+
+| Job | What it does | Fails when |
+|---|---|---|
+| `lint` | `ruff check .` | any lint error |
+| `test` | `pytest` for the quiz API and the USSD menu | any test fails |
+| `docker-build` | builds the image with Docker Compose, starts it and calls `/health` | the build fails or the container is not healthy |
+
+`lint`, `test` and `docker-build` are **required status checks** on `main`, so a pull request cannot be merged until all three pass and it has one approving review.
 
 ## Project Structure
 
@@ -98,7 +145,9 @@ curl "http://localhost:8000/quiz/math?count=5"
 ├── services/
 │   ├── quiz-api/          # Quiz + scoring service (FastAPI)
 │   └── ussd-gateway/      # USSD menu service
-├── docker-compose.yml
+├── Dockerfile             # Multi-stage image for quiz-api
+├── docker-compose.yml     # Local orchestration (network, volume, health check)
+├── .dockerignore
 └── README.md
 ```
 
