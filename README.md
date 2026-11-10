@@ -141,7 +141,7 @@ Every push to a branch other than `main`, and every pull request that targets `m
 ├── .github/               # CODEOWNERS, PR/issue templates, CI workflows
 ├── docs/                  # Board plan, branch protection, team guide
 ├── frontend/              # Static web client
-├── infra/terraform/       # Infrastructure as code
+├── terraform/             # AWS network and EC2 configuration
 ├── services/
 │   ├── quiz-api/          # Quiz + scoring service (FastAPI)
 │   └── ussd-gateway/      # USSD menu service
@@ -150,6 +150,8 @@ Every push to a branch other than `main`, and every pull request that targets `m
 ├── .dockerignore
 └── README.md
 ```
+
+See the [Terraform guide](terraform/README.md) to provision the AWS host for SomaQuiz.
 
 ## Collaboration & Security
 
