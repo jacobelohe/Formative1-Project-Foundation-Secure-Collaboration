@@ -44,8 +44,20 @@ jobs:
       - run: pip install -r services/quiz-api/requirements-dev.txt
       - run: PYTHONPATH=services/quiz-api pytest
 
-  # Fails the pipeline if the image does not build, or the container does not
-  # become healthy when started through Docker Compose.
+  # Check the Python packages for known security vulnerabilities.
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+      - name: Audit Python dependencies
+        run: pip-audit -r services/quiz-api/requirements-dev.txt
+
+  # Build the app image, scan it, and check that it starts correctly.
   docker-build:
     runs-on: ubuntu-latest
     steps:
@@ -55,6 +67,15 @@ jobs:
         run: cp .env.example .env
       - name: Build image
         run: docker compose build
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: somaquiz-api:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
       - name: Smoke test the container
         run: |
           docker compose up -d
