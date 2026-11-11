@@ -1,5 +1,6 @@
 services:
   quiz-api:
+    image: somaquiz-api:ci
     build:
       context: .
       dockerfile: Dockerfile
