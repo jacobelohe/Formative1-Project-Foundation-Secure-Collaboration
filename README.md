@@ -139,9 +139,10 @@ Every push to a branch other than `main`, and every pull request that targets `m
 ```
 .
 ├── .github/               # CODEOWNERS, PR/issue templates, CI workflows
+├── ansible/               # EC2 host configuration and deployment
 ├── docs/                  # Board plan, branch protection, team guide
 ├── frontend/              # Static web client
-├── infra/terraform/       # Infrastructure as code
+├── terraform/             # AWS network and EC2 configuration
 ├── services/
 │   ├── quiz-api/          # Quiz + scoring service (FastAPI)
 │   └── ussd-gateway/      # USSD menu service
@@ -150,6 +151,8 @@ Every push to a branch other than `main`, and every pull request that targets `m
 ├── .dockerignore
 └── README.md
 ```
+
+Provision the AWS host with the [Terraform guide](terraform/README.md), then deploy SomaQuiz with the [Ansible guide](ansible/README.md).
 
 ## Collaboration & Security
 

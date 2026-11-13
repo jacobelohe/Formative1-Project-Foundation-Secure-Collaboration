@@ -1,0 +1,90 @@
+---
+- name: Create application directory
+  ansible.builtin.file:
+    path: "{{ app_dest_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Copy Docker build and Compose files
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../{{ item }}"
+    dest: "{{ app_dest_dir }}/{{ item }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - docker-compose.yml
+    - Dockerfile
+    - .dockerignore
+
+- name: Copy the quiz API build context
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../services/quiz-api/"
+    dest: "{{ app_dest_dir }}/services/quiz-api/"
+    owner: root
+    group: root
+    mode: "u=rwX,g=rX,o=rX"
+    directory_mode: "0755"
+
+- name: Deploy application environment configuration
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dest_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Set the API host binding from Terraform
+  ansible.builtin.template:
+    src: compose.override.yml.j2
+    dest: "{{ app_dest_dir }}/compose.override.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Deploy and verify the quiz API
+  when: not ansible_check_mode
+  block:
+    - name: Build and start the API
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dest_dir }}"
+        files:
+          - docker-compose.yml
+          - compose.override.yml
+        state: present
+        build: always
+        wait: true
+        wait_timeout: 120
+
+    - name: Verify the API health response on the instance
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}/health"
+        status_code: 200
+        return_content: true
+      register: health_check
+      until: health_check.status == 200 and (health_check.json | default({})).get('status') == 'healthy'
+      retries: 5
+      delay: 3
+
+  rescue:
+    - name: Read Compose service status for troubleshooting
+      ansible.builtin.command:
+        argv:
+          - docker
+          - compose
+          - -f
+          - docker-compose.yml
+          - -f
+          - compose.override.yml
+          - ps
+          - -a
+        chdir: "{{ app_dest_dir }}"
+      register: compose_status
+      changed_when: false
+      failed_when: false
+
+    - name: Report the failed deployment
+      ansible.builtin.fail:
+        msg: "Deployment stopped at '{{ ansible_failed_task.name }}'. {{ compose_status.stdout | default('') }} {{ compose_status.stderr | default('') }}"

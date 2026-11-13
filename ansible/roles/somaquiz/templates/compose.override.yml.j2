@@ -1,0 +1,4 @@
+services:
+  quiz-api:
+    ports: !override
+      - "{{ app_bind_address }}:{{ app_port }}:8000"
