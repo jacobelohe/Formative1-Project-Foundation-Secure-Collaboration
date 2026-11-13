@@ -7,7 +7,7 @@ The host requires IMDSv2 and uses an encrypted 16 GiB gp3 root volume. SSH is re
 ## Prerequisites
 
 - Terraform 1.7 or newer, AWS CLI and OpenSSH.
-- An authenticated AWS profile with permissions to manage the EC2 and VPC resources and read Canonical's public AMI parameter through `ssm:GetParameter`.
+- An authenticated AWS profile with permissions to manage the EC2 and VPC resources, read EC2 instance type offerings, and read Canonical's public AMI parameter through `ssm:GetParameter`.
 - A region enabled in your AWS account that offers the selected x86-64 instance type. EC2, EBS and the public IPv4 address can incur charges.
 
 ## Initialize and validate

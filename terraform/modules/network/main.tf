@@ -6,6 +6,11 @@ variable "vpc_cidr" {
   type = string
 }
 
+variable "availability_zone" {
+  type    = string
+  default = null
+}
+
 variable "ssh_cidr" {
   type = string
 }
@@ -32,8 +37,9 @@ resource "aws_vpc" "app" {
 }
 
 resource "aws_subnet" "public" {
-  vpc_id     = aws_vpc.app.id
-  cidr_block = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 0)
+  vpc_id            = aws_vpc.app.id
+  availability_zone = var.availability_zone
+  cidr_block        = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 0)
 
   tags = { Name = "${var.name}-public" }
 }

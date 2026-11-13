@@ -1,4 +1,10 @@
 mock_provider "aws" {
+  mock_data "aws_ec2_instance_type_offerings" {
+    defaults = {
+      locations = ["us-east-1b", "us-east-1a"]
+    }
+  }
+
   mock_data "aws_ssm_parameter" {
     defaults = {
       insecure_value = "ami-0123456789abcdef0"
