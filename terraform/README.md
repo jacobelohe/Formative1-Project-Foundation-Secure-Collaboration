@@ -40,6 +40,13 @@ The tests use a mocked AWS provider. They check the network rules and the Ansibl
 
 Use the name of your configured profile in place of `your-profile`. You can omit the profile assignment when using the AWS CLI default profile. Verify that the AWS CLI reports the intended account before proceeding.
 
+If your CLI uses a browser-based `aws login` session, the pinned Terraform AWS provider can use it through a separate local profile. Add this section to `~/.aws/config`. Replace `default` in the command if your browser login uses a named profile. Then use `somaquiz-terraform` as `AWS_PROFILE` below. [AWS CLI credential export](https://docs.aws.amazon.com/cli/latest/reference/configure/export-credentials.html)
+
+```ini
+[profile somaquiz-terraform]
+credential_process = aws configure export-credentials --profile default --format process
+```
+
 ```powershell
 $env:AWS_PROFILE = "your-profile"
 aws sts get-caller-identity
@@ -62,7 +69,7 @@ ssh -i "$HOME/.ssh/somaquiz" "$vmUser@$vmIp"
 
 Use the corresponding private key path if you selected a different key. Allow time for EC2 and SSH to start. If SSH times out, check the EC2 instance status and confirm that `ssh_cidr` matches your current public IPv4 address.
 
-Use `public_ip` and `ssh_user` for the Ansible inventory. The output also lists the private IPv4 address and the instance, VPC, subnet and security group IDs. Refresh the public IP after an instance replacement or stop/start. Part 2 installs the container runtime and deploys the app.
+For Ansible, pass along `aws_region` and `instance_id` for dynamic discovery, or `public_ip` and `ssh_user` for the static inventory. Export the port and bind address with `terraform output -json ansible_vars`. Update the instance ID after a replacement, or refresh the public IP in the static inventory after a stop/start. [Ansible setup and verification](../ansible/README.md)
 
 Once Part 2 is deployed, access the API without opening its port to the internet. Keep this SSH session open, then run `curl.exe http://127.0.0.1:8000/health` from another terminal.
 
