@@ -108,6 +108,8 @@ resource "aws_vpc_security_group_ingress_rule" "app" {
   to_port           = var.container_port
 }
 
+# These rules are limited to web ports for OS updates and image pulls. Review before production.
+# trivy:ignore:AWS-0104:exp:2026-12-13
 resource "aws_vpc_security_group_egress_rule" "web" {
   for_each = {
     "80"  = "Ubuntu package mirrors"
