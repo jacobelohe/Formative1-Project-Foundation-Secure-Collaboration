@@ -1,4 +1,14 @@
 ---
+- name: Verify the deployment inventory
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Require exactly one SomaQuiz host
+      ansible.builtin.assert:
+        that: groups.get('webservers', []) | length == 1
+        fail_msg: Check the Terraform region and instance ID or the static webservers inventory.
+
 - name: Configure and deploy SomaQuiz
   hosts: webservers
   become: true
