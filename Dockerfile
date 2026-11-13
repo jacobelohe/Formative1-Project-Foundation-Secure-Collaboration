@@ -23,6 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final runtime environment
 FROM python:3.12-slim
 
+# Apply the Debian security update for zlib1g before adding the application.
+RUN apt-get update \
+    && apt-get install --only-upgrade -y zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set the working directory for the application
 WORKDIR /app
 
