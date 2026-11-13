@@ -38,6 +38,14 @@ output "container_port" {
   value       = var.container_port
 }
 
+output "ansible_vars" {
+  description = "Deployment settings for Ansible. Export with terraform output -json ansible_vars."
+  value = {
+    app_port         = var.container_port
+    app_bind_address = length(var.app_cidrs) == 0 ? "127.0.0.1" : "0.0.0.0"
+  }
+}
+
 output "aws_region" {
   description = "AWS region where the stack runs."
   value       = var.aws_region

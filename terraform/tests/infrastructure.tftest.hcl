@@ -27,9 +27,25 @@ run "ansible_handoff" {
       output.public_ip == "198.51.100.42" &&
       output.private_ip == "10.42.0.10" &&
       output.ssh_user == "ubuntu" &&
-      output.container_port == 8000
+      output.container_port == 8000 &&
+      output.ansible_vars.app_port == 8000 &&
+      output.ansible_vars.app_bind_address == "127.0.0.1"
     )
     error_message = "The stack must expose the host address, SSH user and API port."
+  }
+}
+
+run "handoff_with_direct_app_access" {
+  command = plan
+
+  variables {
+    app_cidrs      = ["203.0.113.20/32"]
+    container_port = 8080
+  }
+
+  assert {
+    condition     = output.ansible_vars.app_port == 8080 && output.ansible_vars.app_bind_address == "0.0.0.0"
+    error_message = "Ansible must publish the configured host port when direct access is enabled."
   }
 }
 
