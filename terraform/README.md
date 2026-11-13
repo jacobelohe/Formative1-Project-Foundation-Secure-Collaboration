@@ -2,7 +2,7 @@
 
 Terraform creates one VPC, one public subnet and an Ubuntu 24.04 EC2 instance for the SomaQuiz quiz API. The network module manages the subnet, internet gateway, routing and security groups. The host module manages the EC2 instance and imports your SSH public key. [Canonical Ubuntu AMI lookup](https://documentation.ubuntu.com/aws/aws-how-to/instances/build-cloudformation-templates/)
 
-The host requires IMDSv2 and uses an encrypted 16 GiB gp3 root volume. SSH is allowed from one public IPv4 address. Direct access to the quiz API is off by default. Outbound TCP ports 80 and 443 support OS updates and container pulls.
+The host requires IMDSv2 and uses an encrypted 16 GiB gp3 root volume. SSH is restricted to approved public IPv4 addresses. Direct access to the quiz API is off by default. Outbound TCP ports 80 and 443 support OS updates and container pulls.
 
 ## Prerequisites
 
@@ -24,6 +24,8 @@ notepad terraform.tfvars
 ```
 
 Set `aws_region` to your chosen AWS region and `ssh_cidr` to the public IPv4 address of the machine running SSH or Ansible, followed by `/32`. If you use an existing key, set `ssh_public_key_path` to its `.pub` file. Keep the private key on your machine.
+
+For additional operators, set `additional_ssh_cidrs` to their public IPv4 addresses in `/32` notation and `additional_ssh_public_key_paths` to their local public key files. Cloud-init installs these keys at launch. Review the plan before changing the key list on an existing host because that change replaces the instance.
 
 `container_port` defaults to `8000` to match the repository's Docker Compose host port. If you change it, use the same host port when deploying the container. If you need direct HTTP for a demo, set `app_cidrs` to the approved source CIDRs. For example, `app_cidrs = ["198.51.100.10/32"]` illustrates the format. Replace that address before use.
 

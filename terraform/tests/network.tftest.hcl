@@ -42,3 +42,20 @@ run "approved_app_ingress" {
     error_message = "An approved source must be able to reach the configured API port."
   }
 }
+
+run "additional_operator_ingress" {
+  command = plan
+
+  module {
+    source = "./modules/network"
+  }
+
+  variables {
+    additional_ssh_cidrs = ["198.51.100.10/32", "203.0.113.20/32"]
+  }
+
+  assert {
+    condition     = length(aws_vpc_security_group_ingress_rule.additional_ssh) == 1 && aws_vpc_security_group_ingress_rule.additional_ssh["203.0.113.20/32"].from_port == 22
+    error_message = "Each additional SSH source must get one port 22 rule without duplicating the primary source."
+  }
+}

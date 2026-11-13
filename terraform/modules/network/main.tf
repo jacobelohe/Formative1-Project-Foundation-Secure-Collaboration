@@ -10,6 +10,11 @@ variable "ssh_cidr" {
   type = string
 }
 
+variable "additional_ssh_cidrs" {
+  type    = set(string)
+  default = []
+}
+
 variable "app_cidrs" {
   type = set(string)
 }
@@ -70,6 +75,17 @@ resource "aws_vpc_security_group_ingress_rule" "ssh" {
   security_group_id = aws_security_group.host.id
   description       = "SSH from the operator"
   cidr_ipv4         = var.ssh_cidr
+  ip_protocol       = "tcp"
+  from_port         = 22
+  to_port           = 22
+}
+
+resource "aws_vpc_security_group_ingress_rule" "additional_ssh" {
+  for_each = setsubtract(var.additional_ssh_cidrs, [var.ssh_cidr])
+
+  security_group_id = aws_security_group.host.id
+  description       = "SSH from an additional operator"
+  cidr_ipv4         = each.value
   ip_protocol       = "tcp"
   from_port         = 22
   to_port           = 22

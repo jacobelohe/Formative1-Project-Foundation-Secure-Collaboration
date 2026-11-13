@@ -41,6 +41,18 @@ variable "ssh_cidr" {
   }
 }
 
+variable "additional_ssh_cidrs" {
+  description = "Public IPv4 /32s for other authorized SSH operators."
+  type        = set(string)
+  default     = []
+  nullable    = false
+
+  validation {
+    condition     = alltrue([for cidr in var.additional_ssh_cidrs : try(can(cidrnetmask(cidr)) && endswith(cidr, "/32"), false)])
+    error_message = "Use one IPv4 address in /32 notation per additional operator."
+  }
+}
+
 variable "app_cidrs" {
   description = "IPv4 CIDRs allowed to reach the application directly. Empty means SSH tunnel only."
   type        = set(string)
@@ -83,4 +95,11 @@ variable "ssh_public_key_path" {
   type        = string
   nullable    = false
   default     = "~/.ssh/somaquiz.pub"
+}
+
+variable "additional_ssh_public_key_paths" {
+  description = "Local OpenSSH public key files to authorize alongside the EC2 launch key."
+  type        = set(string)
+  default     = []
+  nullable    = false
 }

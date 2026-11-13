@@ -22,6 +22,11 @@ variable "ssh_public_key" {
   type = string
 }
 
+variable "additional_ssh_public_keys" {
+  type    = list(string)
+  default = []
+}
+
 data "aws_ssm_parameter" "ubuntu" {
   count = var.ami_id == null ? 1 : 0
 
@@ -40,6 +45,11 @@ resource "aws_instance" "app" {
   vpc_security_group_ids      = [var.security_group_id]
   key_name                    = aws_key_pair.operator.key_name
   associate_public_ip_address = true
+  user_data = length(var.additional_ssh_public_keys) == 0 ? null : join("\n", [
+    "#cloud-config",
+    yamlencode({ ssh_authorized_keys = distinct(var.additional_ssh_public_keys) }),
+  ])
+  user_data_replace_on_change = true
 
   metadata_options {
     http_tokens = "required"
