@@ -5,6 +5,7 @@
   force_handlers: true
   vars:
     app_port: 8000
+    app_bind_address: 127.0.0.1
     app_dest_dir: /opt/somaquiz
     app_env: production
     app_database_url: sqlite:///./somaquiz.db
