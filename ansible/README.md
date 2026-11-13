@@ -16,6 +16,8 @@ export ANSIBLE_CONFIG="$PWD/ansible.cfg"
 
 The EC2 SSH security group must allow TCP 22 from the controller's public IPv4 address. Terraform must install the matching public key on the instance. Keep the private key on the controller and load it into `ssh-agent` if it has a passphrase. Verify the server's SSH host fingerprint before accepting it on first connection.
 
+Keep SSH connection reuse enabled when running the playbook. The UFW SSH rate limit can reject repeated new connections during deployment.
+
 ## Build the inventory
 
 After Terraform applies, take `aws_region`, `instance_id`, `public_ip` and `ssh_user` from `terraform output`. In the Terraform directory, export the application port and bind address for Ansible.
