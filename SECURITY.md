@@ -6,7 +6,7 @@ The CI workflow runs a Python dependency scan with `pip-audit` and scans the bui
 
 A baseline `pip-audit -r services/quiz-api/requirements-dev.txt` run on 11 November 2026 reported no known vulnerabilities in the runtime or development requirements at that time. The development requirements include the runtime requirements and both files allow version ranges, so the result can change as new package versions or vulnerability reports become available.
 
-The first Trivy runs on 11 November 2026 found two `HIGH` vulnerabilities in Debian's `zlib1g` package in the app image: CVE-2026-76844 and CVE-2026-85091. Trivy reported the fixed package version as `1:1.3.dfsg+really1.3.1-1+deb13u1`. The final Docker stage now updates `zlib1g` from Debian's package repository before building the runtime image. The next CI run must confirm the fix; this file does not claim the image is clean until that scan passes.
+The first Trivy runs on 11 November 2026 found two `HIGH` vulnerabilities in Debian's `zlib1g` package in the app image: CVE-2026-76844 and CVE-2026-85091. Trivy reported the fixed package version as `1:1.3.dfsg+really1.3.1-1+deb13u1`. The final Docker stage now updates `zlib1g` from Debian's package repository before building the runtime image. Both push and pull-request CI runs for commit `c58f176` passed on 13 November 2026, including the Docker/Trivy job. This confirms there were no fixable `HIGH` or `CRITICAL` findings under the configured scan in those runs; continue scanning because the base image and vulnerability database can change.
 
 ## How findings are handled
 
