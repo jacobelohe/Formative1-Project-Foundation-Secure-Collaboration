@@ -2,12 +2,21 @@
 - name: Configure and deploy SomaQuiz
   hosts: webservers
   become: true
+  force_handlers: true
   vars:
     app_port: 8000
-    ssh_port: 22
     app_dest_dir: /opt/somaquiz
     app_env: production
     app_database_url: sqlite:///./somaquiz.db
+
+  pre_tasks:
+    - name: Check that the target matches the Terraform Ubuntu host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Ubuntu'
+          - ansible_facts.distribution_version == '24.04'
+          - ansible_facts.architecture == 'x86_64'
+        fail_msg: Use the Ubuntu 24.04 amd64 EC2 host provisioned by Terraform.
 
   roles:
     - host_security
