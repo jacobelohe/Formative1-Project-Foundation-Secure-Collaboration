@@ -8,6 +8,7 @@
     state: present
     update_cache: true
     cache_valid_time: 3600
+    policy_rc_d: 101
 
 - name: Set UFW default incoming policy to deny
   community.general.ufw:
@@ -53,6 +54,10 @@
     name: fail2ban
     enabled: true
     state: started
+  when: not ansible_check_mode
+
+- name: Apply Fail2ban changes before continuing
+  ansible.builtin.meta: flush_handlers
 
 - name: Apply and verify the SSH policy
   block:
