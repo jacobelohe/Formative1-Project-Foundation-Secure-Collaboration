@@ -1,0 +1,15 @@
+---
+plugin: amazon.aws.aws_ec2
+regions:
+  - REPLACE_WITH_TERRAFORM_AWS_REGION
+filters:
+  instance-state-name: running
+  instance-id: REPLACE_WITH_TERRAFORM_INSTANCE_ID
+hostnames:
+  - instance-id
+compose:
+  ansible_host: public_ip_address
+  ansible_user: "'ubuntu'"
+groups:
+  webservers: "true"
+strict: true

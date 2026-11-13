@@ -1,0 +1,122 @@
+---
+- name: Install host security packages
+  ansible.builtin.apt:
+    name:
+      - ufw
+      - fail2ban
+      - python3-systemd
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    policy_rc_d: 101
+
+- name: Set UFW default incoming policy to deny
+  community.general.ufw:
+    direction: incoming
+    policy: deny
+
+- name: Set UFW default outgoing policy to allow
+  community.general.ufw:
+    direction: outgoing
+    policy: allow
+
+- name: Allow rate-limited SSH before enabling UFW
+  community.general.ufw:
+    rule: limit
+    port: "22"
+    proto: tcp
+
+- name: Remove the old unrestricted application rule
+  community.general.ufw:
+    rule: allow
+    port: "8000"
+    proto: tcp
+    delete: true
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+
+- name: Configure Fail2ban for the SSH journal
+  ansible.builtin.copy:
+    dest: /etc/fail2ban/jail.d/somaquiz-ssh.local
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [sshd]
+      enabled = true
+      backend = systemd
+  notify: Restart Fail2ban
+
+- name: Enable and start Fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    enabled: true
+    state: started
+  when: not ansible_check_mode
+
+- name: Apply Fail2ban changes before continuing
+  ansible.builtin.meta: flush_handlers
+
+- name: Apply and verify the SSH policy
+  block:
+    - name: Require SSH public key authentication
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/00-somaquiz.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          PermitRootLogin no
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          AuthenticationMethods publickey
+        backup: true
+        validate: /usr/sbin/sshd -t -f %s
+      register: ssh_policy
+
+    - name: Read effective SSH settings before reloading
+      ansible.builtin.command: /usr/sbin/sshd -T
+      register: ssh_settings
+      changed_when: false
+      when: not ansible_check_mode
+
+    - name: Verify that the SSH policy takes effect
+      ansible.builtin.assert:
+        that:
+          - "'permitrootlogin no' in ssh_settings.stdout_lines"
+          - "'pubkeyauthentication yes' in ssh_settings.stdout_lines"
+          - "'passwordauthentication no' in ssh_settings.stdout_lines"
+          - "'kbdinteractiveauthentication no' in ssh_settings.stdout_lines"
+          - "'authenticationmethods publickey' in ssh_settings.stdout_lines"
+        fail_msg: Check earlier SSH settings that may override the SomaQuiz drop-in.
+      when: not ansible_check_mode
+
+    - name: Reload SSH after validating the effective policy
+      ansible.builtin.service:
+        name: ssh
+        state: reloaded
+      when: ssh_policy.changed and not ansible_check_mode
+
+  rescue:
+    - name: Restore the previous SSH drop-in
+      ansible.builtin.copy:
+        src: "{{ ssh_policy.backup_file }}"
+        dest: /etc/ssh/sshd_config.d/00-somaquiz.conf
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0644"
+      when: ssh_policy.backup_file is defined
+
+    - name: Remove a rejected new SSH drop-in
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/00-somaquiz.conf
+        state: absent
+      when: ssh_policy is changed and ssh_policy.backup_file is not defined
+
+    - name: Stop after the SSH policy failure
+      ansible.builtin.fail:
+        msg: "SSH policy setup stopped at '{{ ansible_failed_task.name }}'. Check the failure above before retrying."
