@@ -1,7 +1,7 @@
-from app.main import app
+from app import main
 from fastapi.testclient import TestClient
 
-client = TestClient(app)
+client = TestClient(main.app)
 
 def test_read_root():
     response = client.get("/")
@@ -12,6 +12,22 @@ def test_health():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
+
+def test_readiness():
+    response = client.get("/ready")
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "ready",
+        "question_count": len(main.QUESTIONS),
+    }
+
+def test_readiness_fails_when_questions_are_missing(monkeypatch):
+    monkeypatch.setattr(main, "QUESTIONS", [])
+
+    response = client.get("/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Quiz questions are not loaded"}
 
 def test_subjects():
     response = client.get("/subjects")
