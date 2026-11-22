@@ -59,7 +59,9 @@ docker-compose.override.yml
 *.tfstate
 *.tfstate.*
 *.tfvars
+*.tfvars.json
 !example.tfvars
+*.tfplan
 crash.log
 .terraformrc
 

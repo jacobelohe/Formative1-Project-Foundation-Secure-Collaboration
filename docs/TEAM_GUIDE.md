@@ -18,7 +18,7 @@ Branch: `feature/ussd-menu-ewing`, then `test/unit-tests-ewing`.
 ## Olaniyi (@olaniyiolufemi): DevOps, cards 10-12
 - `services/quiz-api/Dockerfile`, root `docker-compose.yml`.
 - `.github/workflows/ci.yml` with jobs named `lint` (ruff), `test` (pytest), `docker-build`. Then Jacob adds these as required checks.
-- `infra/terraform/` skeleton: provider, variables, outputs. No real secrets; `*.tfstate` is already ignored.
+- [`terraform/`](../terraform/README.md) provisions the AWS network and EC2 host. Terraform state stays out of Git.
 Branch: `devops/docker-olaniyi`, `devops/ci-olaniyi`.
 
 ## Jacob (lead): cards 1-3, 14

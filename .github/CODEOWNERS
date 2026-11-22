@@ -4,6 +4,6 @@
 /services/ussd-gateway/ @Zoulou1 @jacobelohe
 /.github/               @jacobelohe
 /docs/                  @jacobelohe
-/infra/                 @olaniyiolufemi @jacobelohe
+/terraform/             @olaniyiolufemi @jacobelohe
 /Dockerfile             @olaniyiolufemi
 /docker-compose.yml     @olaniyiolufemi
