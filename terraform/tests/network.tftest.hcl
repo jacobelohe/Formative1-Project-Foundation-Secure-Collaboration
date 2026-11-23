@@ -1,61 +1,40 @@
 mock_provider "aws" {}
 
 variables {
-  name           = "somaquiz-test"
-  vpc_cidr       = "10.42.0.0/16"
-  ssh_cidr       = "198.51.100.10/32"
-  app_cidrs      = []
-  container_port = 8000
+  name               = "somaquiz-test"
+  vpc_cidr           = "10.42.0.0/16"
+  availability_zones = ["us-east-1a", "us-east-1b"]
+  ssh_cidrs          = ["198.51.100.10/32"]
+  web_cidrs          = ["0.0.0.0/0"]
+  app_port           = 8000
 }
 
-run "default_ingress" {
-  command = plan
+run "segmented_private_network" {
+  command = apply
 
   module {
-    source = "./modules/network"
+    source = "./modules/networking"
   }
 
   assert {
     condition = (
-      aws_subnet.public.cidr_block == "10.42.0.0/24" &&
-      aws_vpc_security_group_ingress_rule.ssh.cidr_ipv4 == var.ssh_cidr &&
-      aws_vpc_security_group_ingress_rule.ssh.from_port == 22 &&
-      length(aws_vpc_security_group_ingress_rule.app) == 0
+      aws_subnet.public.map_public_ip_on_launch &&
+      !aws_subnet.app.map_public_ip_on_launch &&
+      aws_subnet.app.availability_zone == "us-east-1a" &&
+      aws_subnet.database_b.availability_zone == "us-east-1b" &&
+      length(output.public_subnet_ids) == 2 &&
+      length(output.database_subnet_ids) == 2
     )
-    error_message = "Use the first /24, restrict SSH to the operator and keep the API closed by default."
-  }
-}
-
-run "approved_app_ingress" {
-  command = plan
-
-  module {
-    source = "./modules/network"
-  }
-
-  variables {
-    app_cidrs = ["203.0.113.20/32"]
+    error_message = "The app and database must remain private while the edge tier spans two public zones."
   }
 
   assert {
-    condition     = aws_vpc_security_group_ingress_rule.app["203.0.113.20/32"].from_port == var.container_port
-    error_message = "An approved source must be able to reach the configured API port."
-  }
-}
-
-run "additional_operator_ingress" {
-  command = plan
-
-  module {
-    source = "./modules/network"
-  }
-
-  variables {
-    additional_ssh_cidrs = ["198.51.100.10/32", "203.0.113.20/32"]
-  }
-
-  assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.additional_ssh) == 1 && aws_vpc_security_group_ingress_rule.additional_ssh["203.0.113.20/32"].from_port == 22
-    error_message = "Each additional SSH source must get one port 22 rule without duplicating the primary source."
+    condition = (
+      aws_vpc_security_group_ingress_rule.bastion_ssh["198.51.100.10/32"].from_port == 22 &&
+      aws_vpc_security_group_ingress_rule.app_ssh.referenced_security_group_id == aws_security_group.bastion.id &&
+      aws_vpc_security_group_ingress_rule.app_web.referenced_security_group_id == aws_security_group.alb.id &&
+      aws_vpc_security_group_ingress_rule.alb_http["0.0.0.0/0"].from_port == 80
+    )
+    error_message = "SSH must use the bastion and app traffic must come through the public load balancer."
   }
 }
