@@ -57,3 +57,4 @@ output "endpoint" { value = aws_db_instance.database.address }
 output "port" { value = aws_db_instance.database.port }
 output "resource_id" { value = aws_db_instance.database.resource_id }
 output "master_secret_arn" { value = aws_db_instance.database.master_user_secret[0].secret_arn }
+output "security_group_id" { value = aws_security_group.database.id }
