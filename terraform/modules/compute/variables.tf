@@ -40,3 +40,7 @@ variable "additional_ssh_public_keys" {
   type    = list(string)
   default = []
 }
+
+variable "ecr_repository_arn" {
+  type = string
+}
