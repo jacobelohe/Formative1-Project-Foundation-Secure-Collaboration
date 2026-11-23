@@ -18,14 +18,15 @@ run "segmented_private_network" {
 
   assert {
     condition = (
-      aws_subnet.public.map_public_ip_on_launch &&
+      !aws_subnet.public.map_public_ip_on_launch &&
+      !aws_subnet.public_b.map_public_ip_on_launch &&
       !aws_subnet.app.map_public_ip_on_launch &&
       aws_subnet.app.availability_zone == "us-east-1a" &&
       aws_subnet.database_b.availability_zone == "us-east-1b" &&
       length(output.public_subnet_ids) == 2 &&
       length(output.database_subnet_ids) == 2
     )
-    error_message = "The app and database must remain private while the edge tier spans two public zones."
+    error_message = "Subnets must not auto-assign public IPs; the app and database stay private and the edge spans two public zones."
   }
 
   assert {

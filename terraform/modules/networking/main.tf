@@ -16,7 +16,7 @@ resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.app.id
   availability_zone       = var.availability_zones[0]
   cidr_block              = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 0)
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   tags                    = { Name = "${var.name}-public-a" }
 }
 
@@ -24,7 +24,7 @@ resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.app.id
   availability_zone       = var.availability_zones[1]
   cidr_block              = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 1)
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   tags                    = { Name = "${var.name}-public-b" }
 }
 
@@ -148,16 +148,6 @@ resource "aws_vpc_security_group_egress_rule" "bastion_app_ssh" {
   to_port                      = 22
 }
 
-resource "aws_vpc_security_group_egress_rule" "bastion_web" {
-  for_each          = toset(["80", "443"])
-  security_group_id = aws_security_group.bastion.id
-  description       = "Package and security updates"
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "tcp"
-  from_port         = tonumber(each.value)
-  to_port           = tonumber(each.value)
-}
-
 resource "aws_vpc_security_group_ingress_rule" "app_ssh" {
   security_group_id            = aws_security_group.app.id
   description                  = "SSH only through the bastion"
@@ -176,6 +166,8 @@ resource "aws_vpc_security_group_ingress_rule" "app_web" {
   to_port                      = var.app_port
 }
 
+# Temporary access for Ubuntu packages and ECR image pulls through the NAT gateway.
+#trivy:ignore:AWS-0104:exp:2026-12-13
 resource "aws_vpc_security_group_egress_rule" "app_web" {
   for_each          = toset(["80", "443"])
   security_group_id = aws_security_group.app.id

@@ -5,6 +5,8 @@ variable "security_group_id" { type = string }
 variable "instance_id" { type = string }
 variable "app_port" { type = number }
 
+# The public application requires an internet-facing ALB; the app host remains private.
+#trivy:ignore:AWS-0053:exp:2026-12-13
 resource "aws_lb" "app" {
   name                       = substr("${var.name}-web", 0, 32)
   internal                   = false
@@ -41,6 +43,8 @@ resource "aws_lb_target_group_attachment" "app" {
   port             = var.app_port
 }
 
+# Keep HTTP temporarily until the team has a domain and matching ACM certificate.
+#trivy:ignore:AWS-0054:exp:2026-12-13
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
