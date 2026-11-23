@@ -99,11 +99,16 @@ docker compose down                  # stop and remove the containers (keeps the
 docker compose down -v               # also delete the named data volume
 ```
 
-Check it is healthy:
+Check health and readiness:
 
 ```bash
-curl http://localhost:8000/health    # {"status":"healthy"}
+curl -i http://localhost:8000/health
+curl -i http://localhost:8000/ready
+docker compose ps
+docker compose logs --tail=20 quiz-api
 ```
+
+`/health` shows that the API is responding. `/ready` also checks that quiz questions are loaded and returns their count. The container health check and CI smoke test use `/ready`. See the [observability guide](docs/OBSERVABILITY.md) for what these signals mean.
 
 Run the tests on your machine (they also run in CI):
 
@@ -130,7 +135,7 @@ Every push to a branch other than `main`, and every pull request that targets `m
 |---|---|---|
 | `lint` | `ruff check .` | any lint error |
 | `test` | `pytest` for the quiz API and the USSD menu | any test fails |
-| `docker-build` | builds the image with Docker Compose, starts it and calls `/health` | the build fails or the container is not healthy |
+| `docker-build` | builds the image with Docker Compose, starts it and calls `/ready` | the build fails or the container is not ready |
 
 `lint`, `test` and `docker-build` are **required status checks** on `main`, so a pull request cannot be merged until all three pass and it has one approving review.
 

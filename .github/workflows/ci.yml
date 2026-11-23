@@ -93,14 +93,14 @@ jobs:
         run: |
           docker compose up -d
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8000/health; then
-              echo "API is healthy"
+            if curl -fsS http://localhost:8000/ready; then
+              echo "API is ready"
               docker compose down
               exit 0
             fi
             sleep 2
           done
-          echo "API did not become healthy" >&2
+          echo "API did not become ready" >&2
           docker compose logs
           docker compose down
           exit 1
