@@ -36,10 +36,10 @@ resource "aws_ecr_lifecycle_policy" "app" {
         rulePriority = 2
         description  = "Keep the ten newest tagged releases"
         selection = {
-          tagStatus     = "tagged"
+          tagStatus      = "tagged"
           tagPatternList = ["*"]
-          countType     = "imageCountMoreThan"
-          countNumber   = 10
+          countType      = "imageCountMoreThan"
+          countNumber    = 10
         }
         action = { type = "expire" }
       }

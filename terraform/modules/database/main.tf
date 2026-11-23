@@ -32,22 +32,22 @@ resource "aws_db_subnet_group" "database" {
 }
 
 resource "aws_db_instance" "database" {
-  identifier                  = "${var.name}-database"
-  engine                      = "postgres"
-  instance_class              = var.instance_class
-  allocated_storage           = var.allocated_storage
-  storage_type                = "gp3"
-  storage_encrypted           = true
-  db_name                     = var.database_name
-  username                    = var.database_username
-  manage_master_user_password = true
-  db_subnet_group_name        = aws_db_subnet_group.database.name
-  vpc_security_group_ids      = [aws_security_group.database.id]
-  publicly_accessible         = false
-  backup_retention_period     = 1
-  deletion_protection         = var.deletion_protection
-  skip_final_snapshot         = true
-  auto_minor_version_upgrade  = true
+  identifier                      = "${var.name}-database"
+  engine                          = "postgres"
+  instance_class                  = var.instance_class
+  allocated_storage               = var.allocated_storage
+  storage_type                    = "gp3"
+  storage_encrypted               = true
+  db_name                         = var.database_name
+  username                        = var.database_username
+  manage_master_user_password     = true
+  db_subnet_group_name            = aws_db_subnet_group.database.name
+  vpc_security_group_ids          = [aws_security_group.database.id]
+  publicly_accessible             = false
+  backup_retention_period         = 1
+  deletion_protection             = var.deletion_protection
+  skip_final_snapshot             = true
+  auto_minor_version_upgrade      = true
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
   tags = { Name = "${var.name}-database" }

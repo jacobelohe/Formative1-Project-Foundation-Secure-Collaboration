@@ -31,9 +31,9 @@ output "database_subnet_ids" {
 output "security_group_ids" {
   description = "Security groups for bastion, application, load balancer and database."
   value = {
-    bastion = module.network.bastion_security_group_id
-    app     = module.network.app_security_group_id
-    web     = module.network.alb_security_group_id
+    bastion  = module.network.bastion_security_group_id
+    app      = module.network.app_security_group_id
+    web      = module.network.alb_security_group_id
     database = module.database.security_group_id
   }
 }
@@ -93,9 +93,9 @@ output "ansible_vars" {
   value = {
     app_port         = var.container_port
     app_bind_address = "0.0.0.0"
-    app_host          = module.host.private_ip
-    bastion_host      = module.host.bastion_public_ip
-    ssh_user          = "ubuntu"
+    app_host         = module.host.private_ip
+    bastion_host     = module.host.bastion_public_ip
+    ssh_user         = "ubuntu"
   }
 }
 

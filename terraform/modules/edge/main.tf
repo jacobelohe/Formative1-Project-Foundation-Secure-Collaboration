@@ -6,13 +6,13 @@ variable "instance_id" { type = string }
 variable "app_port" { type = number }
 
 resource "aws_lb" "app" {
-  name               = substr("${var.name}-web", 0, 32)
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [var.security_group_id]
-  subnets            = var.public_subnet_ids
+  name                       = substr("${var.name}-web", 0, 32)
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [var.security_group_id]
+  subnets                    = var.public_subnet_ids
   drop_invalid_header_fields = true
-  tags               = { Name = "${var.name}-web" }
+  tags                       = { Name = "${var.name}-web" }
 }
 
 resource "aws_lb_target_group" "app" {

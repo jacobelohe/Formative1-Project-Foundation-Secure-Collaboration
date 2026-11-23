@@ -29,24 +29,27 @@ resource "aws_subnet" "public_b" {
 }
 
 resource "aws_subnet" "app" {
-  vpc_id            = aws_vpc.app.id
-  availability_zone = var.availability_zones[0]
-  cidr_block        = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 2)
-  tags              = { Name = "${var.name}-app-private" }
+  vpc_id                  = aws_vpc.app.id
+  availability_zone       = var.availability_zones[0]
+  cidr_block              = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 2)
+  map_public_ip_on_launch = false
+  tags                    = { Name = "${var.name}-app-private" }
 }
 
 resource "aws_subnet" "database_a" {
-  vpc_id            = aws_vpc.app.id
-  availability_zone = var.availability_zones[0]
-  cidr_block        = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 3)
-  tags              = { Name = "${var.name}-data-private-a" }
+  vpc_id                  = aws_vpc.app.id
+  availability_zone       = var.availability_zones[0]
+  cidr_block              = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 3)
+  map_public_ip_on_launch = false
+  tags                    = { Name = "${var.name}-data-private-a" }
 }
 
 resource "aws_subnet" "database_b" {
-  vpc_id            = aws_vpc.app.id
-  availability_zone = var.availability_zones[1]
-  cidr_block        = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 4)
-  tags              = { Name = "${var.name}-data-private-b" }
+  vpc_id                  = aws_vpc.app.id
+  availability_zone       = var.availability_zones[1]
+  cidr_block              = cidrsubnet(var.vpc_cidr, 24 - tonumber(split("/", var.vpc_cidr)[1]), 4)
+  map_public_ip_on_launch = false
+  tags                    = { Name = "${var.name}-data-private-b" }
 }
 
 resource "aws_internet_gateway" "app" {
