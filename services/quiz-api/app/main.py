@@ -27,6 +27,14 @@ def health():
     return {"status": "healthy"}
 
 
+@app.get("/ready")
+def readiness():
+    """Report whether the quiz data is loaded and ready to serve."""
+    if not QUESTIONS:
+        raise HTTPException(status_code=503, detail="Quiz questions are not loaded")
+    return {"status": "ready", "question_count": len(QUESTIONS)}
+
+
 @app.get("/subjects")
 def list_subjects():
     """Issue #4 — list available subjects."""

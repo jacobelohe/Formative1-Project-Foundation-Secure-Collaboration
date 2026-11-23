@@ -23,6 +23,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final runtime environment
 FROM python:3.12-slim
 
+# Apply the Debian security update for zlib1g before adding the application.
+RUN apt-get update \
+    && apt-get install --only-upgrade -y zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
 # Set the working directory for the application
 WORKDIR /app
 
@@ -52,7 +57,7 @@ EXPOSE 8000
 
 # Configure health check hitting the /health endpoint every 30 seconds
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')"
 
 # Run the FastAPI application using uvicorn on port 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
