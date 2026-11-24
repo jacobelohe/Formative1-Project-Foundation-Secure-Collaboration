@@ -27,8 +27,10 @@ resource "aws_instance" "app" {
   user_data                   = local.extra_keys
   user_data_replace_on_change = true
 
+  # The second hop lets the app container use the instance role to read its database secret.
   metadata_options {
-    http_tokens = "required"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 2
   }
 
   root_block_device {
@@ -73,6 +75,19 @@ resource "aws_iam_role_policy" "ecr_pull" {
         Resource = var.ecr_repository_arn
       }
     ]
+  })
+}
+
+resource "aws_iam_role_policy" "database_secret" {
+  name = "${var.name}-database-secret"
+  role = aws_iam_role.app.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue"]
+      Resource = var.database_secret_arn
+    }]
   })
 }
 

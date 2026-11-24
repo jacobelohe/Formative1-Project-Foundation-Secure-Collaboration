@@ -150,3 +150,20 @@ variable "force_delete_ecr" {
   type        = bool
   default     = false
 }
+
+variable "create_github_oidc_provider" {
+  description = "Create the GitHub OIDC provider. Set to false if the AWS account already has one."
+  type        = bool
+  default     = true
+}
+
+variable "github_oidc_subject" {
+  description = "GitHub OIDC subject allowed to deploy: this repository's production environment only. The numbers are GitHub's immutable owner and repository IDs."
+  type        = string
+  default     = "repo:jacobelohe@253210481/Formative1-Project-Foundation-Secure-Collaboration@1429435732:environment:production"
+
+  validation {
+    condition     = startswith(var.github_oidc_subject, "repo:") && !strcontains(var.github_oidc_subject, "*")
+    error_message = "Use one exact repo: subject without wildcards."
+  }
+}

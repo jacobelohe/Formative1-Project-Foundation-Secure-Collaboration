@@ -108,3 +108,13 @@ output "environment" {
   description = "Environment name used by this stack."
   value       = var.environment
 }
+
+output "github_deploy_role_arn" {
+  description = "IAM role that GitHub Actions assumes through OIDC."
+  value       = module.cicd.role_arn
+}
+
+output "database_name" {
+  description = "Initial PostgreSQL database name."
+  value       = var.database_name
+}

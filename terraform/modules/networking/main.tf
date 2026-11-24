@@ -211,5 +211,6 @@ output "public_subnet_ids" { value = [aws_subnet.public.id, aws_subnet.public_b.
 output "app_subnet_id" { value = aws_subnet.app.id }
 output "database_subnet_ids" { value = [aws_subnet.database_a.id, aws_subnet.database_b.id] }
 output "bastion_security_group_id" { value = aws_security_group.bastion.id }
+output "bastion_security_group_arn" { value = aws_security_group.bastion.arn }
 output "app_security_group_id" { value = aws_security_group.app.id }
 output "alb_security_group_id" { value = aws_security_group.alb.id }
