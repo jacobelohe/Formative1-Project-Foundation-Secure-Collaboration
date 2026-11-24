@@ -75,22 +75,22 @@
           AuthenticationMethods publickey
         backup: true
         validate: /usr/sbin/sshd -t -f %s
-      register: ssh_policy
+      register: host_security_ssh_policy
 
     - name: Read effective SSH settings before reloading
       ansible.builtin.command: /usr/sbin/sshd -T
-      register: ssh_settings
+      register: host_security_ssh_settings
       changed_when: false
       when: not ansible_check_mode
 
     - name: Verify that the SSH policy takes effect
       ansible.builtin.assert:
         that:
-          - "'permitrootlogin no' in ssh_settings.stdout_lines"
-          - "'pubkeyauthentication yes' in ssh_settings.stdout_lines"
-          - "'passwordauthentication no' in ssh_settings.stdout_lines"
-          - "'kbdinteractiveauthentication no' in ssh_settings.stdout_lines"
-          - "'authenticationmethods publickey' in ssh_settings.stdout_lines"
+          - "'permitrootlogin no' in host_security_ssh_settings.stdout_lines"
+          - "'pubkeyauthentication yes' in host_security_ssh_settings.stdout_lines"
+          - "'passwordauthentication no' in host_security_ssh_settings.stdout_lines"
+          - "'kbdinteractiveauthentication no' in host_security_ssh_settings.stdout_lines"
+          - "'authenticationmethods publickey' in host_security_ssh_settings.stdout_lines"
         fail_msg: Check earlier SSH settings that may override the SomaQuiz drop-in.
       when: not ansible_check_mode
 
@@ -98,24 +98,24 @@
       ansible.builtin.service:
         name: ssh
         state: reloaded
-      when: ssh_policy.changed and not ansible_check_mode
+      when: host_security_ssh_policy.changed and not ansible_check_mode
 
   rescue:
     - name: Restore the previous SSH drop-in
       ansible.builtin.copy:
-        src: "{{ ssh_policy.backup_file }}"
+        src: "{{ host_security_ssh_policy.backup_file }}"
         dest: /etc/ssh/sshd_config.d/00-somaquiz.conf
         remote_src: true
         owner: root
         group: root
         mode: "0644"
-      when: ssh_policy.backup_file is defined
+      when: host_security_ssh_policy.backup_file is defined
 
     - name: Remove a rejected new SSH drop-in
       ansible.builtin.file:
         path: /etc/ssh/sshd_config.d/00-somaquiz.conf
         state: absent
-      when: ssh_policy is changed and ssh_policy.backup_file is not defined
+      when: host_security_ssh_policy is changed and host_security_ssh_policy.backup_file is not defined
 
     - name: Stop after the SSH policy failure
       ansible.builtin.fail:
