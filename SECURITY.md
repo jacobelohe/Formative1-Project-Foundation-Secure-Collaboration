@@ -12,7 +12,7 @@ The first Trivy image scans on 11 November 2026 found two `HIGH` vulnerabilities
 
 ### Terraform configuration
 
-The Trivy v0.76.0 scan currently has three documented, time-limited exceptions, each expiring on 13 December 2026:
+The Trivy v0.76.0 scan currently has three documented, time-limited exceptions, each expiring on 15 January 2027 (renewed on 24 November 2026 after review; the risks and reasons are unchanged):
 
 - `AWS-0053` on the internet-facing ALB: the public application needs an internet entry point; its EC2 host remains private.
 - `AWS-0054` on the HTTP listener: no team domain or matching ACM certificate is available yet. Add HTTPS on port 443, redirect HTTP to HTTPS, then remove this exception once the domain is configured.

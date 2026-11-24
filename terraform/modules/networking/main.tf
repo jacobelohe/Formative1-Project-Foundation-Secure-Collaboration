@@ -167,7 +167,7 @@ resource "aws_vpc_security_group_ingress_rule" "app_web" {
 }
 
 # Temporary access for Ubuntu packages and ECR image pulls through the NAT gateway.
-#trivy:ignore:AWS-0104:exp:2026-12-13
+#trivy:ignore:AWS-0104:exp:2027-01-15
 resource "aws_vpc_security_group_egress_rule" "app_web" {
   for_each          = toset(["80", "443"])
   security_group_id = aws_security_group.app.id
