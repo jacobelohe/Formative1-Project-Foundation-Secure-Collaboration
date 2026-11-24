@@ -1,0 +1,5 @@
+---
+# Reach the private VM by jumping through the bastion. Host keys are checked on both hops.
+ansible_ssh_common_args: >-
+  -o ProxyCommand="ssh -W %h:%p -q -o BatchMode=yes -o StrictHostKeyChecking=yes
+  ubuntu@{{ lookup('ansible.builtin.env', 'BASTION_HOST') }}"

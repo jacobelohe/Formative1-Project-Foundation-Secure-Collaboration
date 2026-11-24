@@ -3,6 +3,9 @@
   ansible.builtin.apt:
     name:
       - ca-certificates
+      - curl
+      - git
+      - gnupg
       - python3-debian
     state: present
 

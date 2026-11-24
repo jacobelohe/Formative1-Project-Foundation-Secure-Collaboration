@@ -1,0 +1,10 @@
+services:
+  quiz-api:
+    image: "{{ release_image }}"
+    ports:
+      - "{{ app_bind_address }}:{{ app_port }}:8000"
+    env_file:
+      - .env
+    environment:
+      APP_COMMIT: "{{ release_image.split(':') | last }}"
+    restart: unless-stopped
