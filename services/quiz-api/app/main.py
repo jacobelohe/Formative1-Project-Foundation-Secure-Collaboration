@@ -1,11 +1,16 @@
+import logging
+import os
 import random
 
 from fastapi import FastAPI, HTTPException, Query
 
+from . import storage
 from .db import QUESTIONS
 from .models import SubmitRequest
 from .scoring import ScoringError, score_answers
 from .version import VERSION
+
+logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="SomaQuiz API")
 
@@ -29,10 +34,18 @@ def health():
 
 @app.get("/ready")
 def readiness():
-    """Report whether the quiz data is loaded and ready to serve."""
+    """Report whether quiz data is loaded and the database, if configured, responds."""
     if not QUESTIONS:
         raise HTTPException(status_code=503, detail="Quiz questions are not loaded")
-    return {"status": "ready", "question_count": len(QUESTIONS)}
+    body = {"status": "ready", "question_count": len(QUESTIONS)}
+    if storage.is_enabled():
+        try:
+            storage.ping()
+        except Exception as err:
+            logger.exception("Database readiness check failed")
+            raise HTTPException(status_code=503, detail="Database is not available") from err
+        body["database"] = "connected"
+    return body
 
 
 @app.get("/subjects")
@@ -64,11 +77,37 @@ def submit_answers(subject: str, payload: SubmitRequest):
     """Issue #6 — score answers and return per-question explanations."""
     pool_by_id = {q["id"]: q for q in _questions_for(subject)}
     try:
-        return score_answers([(a.id, a.answer) for a in payload.answers], pool_by_id)
+        result = score_answers([(a.id, a.answer) for a in payload.answers], pool_by_id)
     except ScoringError as err:
         raise HTTPException(status_code=422, detail=str(err))
+    if storage.is_enabled():
+        # The student still gets a score if saving fails; "saved" tells the client.
+        try:
+            storage.record_attempt(subject.lower(), result["score"], result["total"])
+            result["saved"] = True
+        except Exception:
+            logger.exception("Saving the quiz attempt failed")
+            result["saved"] = False
+    return result
+
+
+@app.get("/stats/{subject}")
+def subject_stats(subject: str):
+    """Issue #9 — attempts and average score for a subject, read from the database."""
+    _questions_for(subject)
+    if not storage.is_enabled():
+        raise HTTPException(status_code=503, detail="Statistics need a database")
+    try:
+        return storage.subject_stats(subject.lower())
+    except Exception as err:
+        logger.exception("Reading statistics failed")
+        raise HTTPException(status_code=503, detail="Database is not available") from err
 
 
 @app.get("/version")
 def version():
-    return {"version": VERSION}
+    body = {"version": VERSION}
+    # Set by the deployment so the CD pipeline can confirm which commit is live.
+    if commit := os.getenv("APP_COMMIT"):
+        body["commit"] = commit
+    return body

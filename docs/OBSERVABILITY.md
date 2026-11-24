@@ -3,7 +3,7 @@
 SomaQuiz has two simple checks that help show whether the API is running properly.
 
 - `GET /health` is a liveness check. It returns `200` with `{"status":"healthy"}` when the API can answer a request.
-- `GET /ready` is a readiness check. It returns `200` with the number of loaded quiz questions when the app can serve quizzes. It returns `503` if no questions are loaded.
+- `GET /ready` is a readiness check. It returns `200` with the number of loaded quiz questions when the app can serve quizzes. When a database is configured it also returns `"database":"connected"`. It returns `503` if no questions are loaded or the configured database does not respond.
 
 The Dockerfile and Docker Compose use `/ready` as the container health check. The CI smoke test also waits for `/ready`, so CI checks that the app is ready to serve quiz data.
 
