@@ -7,7 +7,7 @@
 
 ## Live Application
 
-**Pending.** Add the `application_url` Terraform output here after the first deployment. Useful paths: `/docs` (interactive API), `/ready` (database connection), `/version` (deployed commit) and `/stats/math` (data read from the database).
+[Open the live app](http://somaquiz-development-web-1772958576.eu-west-1.elb.amazonaws.com) (HTTP, served by the AWS load balancer). Useful paths: `/docs` (interactive API), `/ready` (database connection), `/version` (deployed commit) and `/stats/math` (data read from the database).
 
 ## Video Demo
 
