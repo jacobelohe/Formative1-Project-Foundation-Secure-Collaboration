@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="t d">
+  <title id="t">SomaQuiz architecture</title>
+  <desc id="d">Users reach a public load balancer that forwards to a private application VM, which uses a private RDS database. GitHub Actions pushes images to ECR and runs Ansible through a bastion.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#334155"/></marker>
+    <marker id="b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#7c3aed"/></marker>
+  </defs>
+  <style>
+    .h{font-size:17px;font-weight:700;fill:#0f172a}.s{font-size:13px;fill:#334155}.r{font-size:12px;fill:#9a3412}
+    .z{font-size:14px;font-weight:700}.l{stroke:#334155;stroke-width:2;fill:none;marker-end:url(#a)}
+    .p{stroke:#7c3aed;stroke-width:2;fill:none;stroke-dasharray:7 4;marker-end:url(#b)}.t{font-size:12px;fill:#334155}.q{font-size:12px;fill:#6d28d9}
+  </style>
+  <rect width="1200" height="800" fill="#ffffff"/>
+
+  <!-- CI/CD -->
+  <rect x="20" y="20" width="250" height="760" rx="12" fill="#f5f3ff" stroke="#7c3aed"/>
+  <text x="40" y="48" class="z" fill="#6d28d9">GitHub: CI/CD flow</text>
+  <g>
+    <rect x="40" y="66" width="210" height="50" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="88" class="h" font-size="15">Pull request</text><text x="54" y="106" class="s">1 approval, checks required</text>
+    <rect x="40" y="140" width="210" height="106" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="164" class="h">CI (ci.yml)</text><text x="54" y="184" class="s">ruff lint, pytest, smoke test</text><text x="54" y="203" class="s">pip-audit: dependencies</text><text x="54" y="222" class="s">Trivy: image and Terraform</text><text x="54" y="239" class="r">HIGH/CRITICAL fails the build</text>
+    <rect x="40" y="270" width="210" height="40" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="296" class="h">Merge to main</text>
+    <rect x="40" y="334" width="210" height="46" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="353" class="h">CD (cd.yml)</text><text x="54" y="371" class="s">repeats every CI check</text>
+    <rect x="40" y="404" width="210" height="62" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="427" class="h">Build, scan, push</text><text x="54" y="449" class="s">image tagged with commit SHA</text>
+    <rect x="40" y="520" width="210" height="62" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="543" class="h">Run Ansible</text><text x="54" y="565" class="s">via bastion, rollback on failure</text>
+    <rect x="40" y="690" width="210" height="62" rx="8" fill="#fff" stroke="#7c3aed"/><text x="54" y="713" class="h">Verify public URL</text><text x="54" y="735" class="s">/version and /ready</text>
+    <path class="p" d="M145 116V138M145 246V268M145 310V332M145 380V402M145 466V518M145 582V688"/>
+    <path class="p" d="M145 116V138"/><path class="p" d="M145 246V268"/><path class="p" d="M145 310V332"/><path class="p" d="M145 380V402"/><path class="p" d="M145 466V518"/>
+  </g>
+
+  <!-- Internet -->
+  <rect x="610" y="20" width="200" height="46" rx="23" fill="#e0f2fe" stroke="#0284c7"/><text x="710" y="49" text-anchor="middle" class="h">Internet users</text>
+
+  <!-- AWS -->
+  <rect x="310" y="90" width="870" height="690" rx="12" fill="#fffbeb" stroke="#d97706"/><text x="330" y="114" class="z" fill="#b45309">AWS account</text>
+
+  <!-- Regional services -->
+  <rect x="990" y="130" width="172" height="76" rx="8" fill="#fff" stroke="#d97706"/><text x="1004" y="154" class="h">IAM</text><text x="1004" y="174" class="s">GitHub OIDC deploy role</text><text x="1004" y="193" class="s">App instance role</text>
+  <rect x="990" y="380" width="172" height="86" rx="8" fill="#fff" stroke="#d97706"/><text x="1004" y="404" class="h">Amazon ECR</text><text x="1004" y="424" class="s">private, immutable tags</text><text x="1004" y="443" class="s">scan on push</text>
+  <rect x="990" y="520" width="172" height="68" rx="8" fill="#fff" stroke="#d97706"/><text x="1004" y="544" class="h">Secrets Manager</text><text x="1004" y="566" class="s">RDS-managed password</text>
+
+  <!-- VPC -->
+  <rect x="330" y="130" width="630" height="630" rx="10" fill="#f0fdf4" stroke="#16a34a"/><text x="348" y="153" class="z" fill="#15803d">VPC 10.42.0.0/16</text>
+
+  <rect x="348" y="168" width="594" height="180" rx="8" fill="#dcfce7" stroke="#16a34a" stroke-dasharray="5 4"/><text x="362" y="189" class="z" fill="#15803d">Public subnets (two zones)</text>
+  <rect x="366" y="206" width="170" height="112" rx="8" fill="#fff" stroke="#16a34a"/><text x="380" y="230" class="h">Bastion host</text><text x="380" y="250" class="s">EC2 t3.micro, public IP</text><text x="380" y="276" class="r">SG in: 22 from approved /32</text><text x="380" y="294" class="r">SG out: 22 to app SG</text>
+  <rect x="610" y="206" width="200" height="112" rx="8" fill="#fff" stroke="#16a34a"/><text x="624" y="230" class="h">Load balancer (ALB)</text><text x="624" y="250" class="s">HTTP listener, checks /ready</text><text x="624" y="276" class="r">SG in: 80 from web_cidrs</text><text x="624" y="294" class="r">SG out: 8000 to app SG</text>
+  <rect x="836" y="206" width="92" height="112" rx="8" fill="#fff" stroke="#16a34a"/><text x="850" y="230" class="h">NAT</text><text x="850" y="250" class="s">outbound</text><text x="850" y="267" class="s">only</text>
+
+  <rect x="348" y="376" width="594" height="190" rx="8" fill="#bbf7d0" stroke="#16a34a" stroke-dasharray="5 4"/><text x="362" y="398" class="z" fill="#15803d">Private application subnet</text>
+  <rect x="560" y="412" width="300" height="136" rx="8" fill="#fff" stroke="#16a34a"/><text x="576" y="436" class="h">Application VM</text><text x="576" y="456" class="s">EC2 t3.micro, no public IP</text><text x="576" y="475" class="s">Docker Compose: quiz-api (FastAPI)</text><text x="576" y="500" class="r">SG in: 8000 from ALB SG, 22 from bastion SG</text><text x="576" y="518" class="r">SG out: 80/443 through NAT, 5432 in VPC</text>
+
+  <rect x="348" y="594" width="594" height="148" rx="8" fill="#86efac" fill-opacity=".6" stroke="#16a34a" stroke-dasharray="5 4"/><text x="362" y="616" class="z" fill="#15803d">Isolated database subnets (two zones)</text>
+  <rect x="560" y="630" width="300" height="92" rx="8" fill="#fff" stroke="#16a34a"/><text x="576" y="654" class="h">RDS PostgreSQL</text><text x="576" y="674" class="s">db.t3.micro, encrypted, not public</text><text x="576" y="700" class="r">SG in: 5432 from app SG only</text>
+
+  <!-- Runtime traffic -->
+  <path class="l" d="M710 66V204"/><text x="720" y="84" class="t">HTTP 80</text>
+  <path class="l" d="M710 318V410"/><text x="720" y="367" class="t">HTTP 8000</text>
+  <path class="l" d="M710 548V628"/><text x="720" y="586" class="t">PostgreSQL 5432 (TLS)</text>
+  <path class="l" d="M882 412V320" /><path d="M860 440H882V412" stroke="#334155" stroke-width="2" fill="none"/>
+  <path class="l" d="M860 530C920 530 930 554 988 554"/>
+  <path class="l" d="M988 446H862"/><text x="868" y="464" class="t">image pull</text>
+
+  <!-- Delivery traffic -->
+  <path class="p" d="M250 435H290V122H975V355H1076V378"/><text x="1086" y="366" class="q">image push</text>
+  <path class="p" d="M250 550H302V262H364"/><text x="308" y="256" class="q">SSH 22</text>
+  <path class="p" d="M450 318V480H558"/><text x="458" y="472" class="q">SSH 22 (jump)</text>
+</svg>
