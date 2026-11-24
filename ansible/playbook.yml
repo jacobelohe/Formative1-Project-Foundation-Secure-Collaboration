@@ -79,10 +79,12 @@
     - name: Install required runtime dependencies
       ansible.builtin.apt:
         name:
+          - apt-transport-https
           - ca-certificates
           - curl
           - gnupg
           - lsb-release
+          - software-properties-common
           - git
           - python3-pip
           - python3-venv
