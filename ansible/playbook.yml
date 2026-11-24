@@ -52,6 +52,12 @@
       community.general.ufw:
         state: enabled
 
+    - name: Ensure fail2ban service is running and enabled
+      ansible.builtin.service:
+        name: fail2ban
+        state: started
+        enabled: true
+
     - name: Disable SSH root login
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
