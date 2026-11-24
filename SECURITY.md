@@ -12,9 +12,15 @@ The first Trivy image scans on 11 November 2026 found two `HIGH` vulnerabilities
 
 ### Terraform configuration
 
-A full Trivy v0.76.0 scan of `terraform/` on 13 November 2026 found two `CRITICAL` `AWS-0104` findings on the outbound security-group rules in `terraform/modules/network/main.tf`. Both rules target `0.0.0.0/0`, one for TCP 80 and one for TCP 443. These ports are used for OS updates and container image pulls. The destination range is still broad, so the risk is accepted temporarily for this student lab. The Terraform resource has a time-limited Trivy exception for `AWS-0104` through 13 December 2026. The rule remains limited to those two TCP ports; it does not allow all protocols or ports. Revisit the exception before it expires and before using this setup for production.
+The Trivy v0.76.0 scan currently has three documented, time-limited exceptions, each expiring on 13 December 2026:
 
-The same scan found one `MEDIUM` `AWS-0178` recommendation because VPC Flow Logs are not enabled. This is accepted for the non-production lab to avoid adding CloudWatch logging and its extra setup and possible charges. Enable Flow Logs if the environment is used beyond the class project or needs network-traffic auditing. The configured CI threshold is `HIGH` and `CRITICAL`, so this `MEDIUM` finding is reported by a full scan but does not fail the gate.
+- `AWS-0053` on the internet-facing ALB: the public application needs an internet entry point; its EC2 host remains private.
+- `AWS-0054` on the HTTP listener: no team domain or matching ACM certificate is available yet. Add HTTPS on port 443, redirect HTTP to HTTPS, then remove this exception once the domain is configured.
+- `AWS-0104` on the app security group's TCP 80/443 egress: outbound access through the NAT gateway is currently needed for Ubuntu packages and ECR image pulls. Replace it with suitable private endpoints and a package source before removing the exception.
+
+The bastion no longer has general internet egress, and public subnets no longer auto-assign public IPs. The bastion's explicit public IP remains for SSH access. Revisit all exceptions before they expire and before using this setup beyond the class lab. Do not extend them without reviewing the risk.
+
+The scan also reports `MEDIUM` `AWS-0178` because VPC Flow Logs are not enabled. This is accepted for the non-production lab to avoid extra CloudWatch setup and charges. Enable Flow Logs if the environment needs network-traffic auditing. The CI threshold is `HIGH` and `CRITICAL`, so this finding does not fail the gate.
 
 ## How findings are handled
 

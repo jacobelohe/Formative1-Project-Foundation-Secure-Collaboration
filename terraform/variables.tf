@@ -1,74 +1,67 @@
 variable "aws_region" {
-  description = "AWS region in which to create the VPC and host."
+  description = "AWS region for the stack."
   type        = string
   nullable    = false
 }
 
 variable "environment" {
-  description = "Deployment name used to label resources."
+  description = "Environment name used in resource tags."
   type        = string
-  nullable    = false
   default     = "development"
 }
 
 variable "app_name" {
-  description = "Application name used to label resources."
+  description = "Application name used in resource tags."
   type        = string
-  nullable    = false
   default     = "somaquiz"
 }
 
 variable "vpc_cidr" {
-  description = "Private IPv4 CIDR for the VPC. The first /24 becomes the public subnet."
+  description = "VPC CIDR split into five /24 public and private subnets."
   type        = string
-  nullable    = false
   default     = "10.42.0.0/16"
 
   validation {
-    condition     = can(cidrnetmask(var.vpc_cidr)) && try(contains(range(16, 25), tonumber(split("/", var.vpc_cidr)[1])), false)
-    error_message = "Use an IPv4 VPC CIDR with a prefix between /16 and /24."
+    condition     = can(cidrnetmask(var.vpc_cidr)) && try(contains(range(16, 22), tonumber(split("/", var.vpc_cidr)[1])), false)
+    error_message = "Use an IPv4 CIDR from /16 through /21 to fit the required subnet layout."
   }
 }
 
 variable "ssh_cidr" {
-  description = "Public IPv4 address of the operator or Ansible controller, as a /32."
+  description = "Operator public IPv4 address allowed to SSH to the bastion, in /32 form."
   type        = string
-  nullable    = false
 
   validation {
     condition     = can(cidrnetmask(var.ssh_cidr)) && endswith(var.ssh_cidr, "/32")
-    error_message = "Use one IPv4 address in /32 notation for SSH."
+    error_message = "Use one public IPv4 address in /32 notation."
   }
 }
 
 variable "additional_ssh_cidrs" {
-  description = "Public IPv4 /32s for other authorized SSH operators."
+  description = "Additional operator public IPv4 addresses allowed to SSH to the bastion."
   type        = set(string)
   default     = []
-  nullable    = false
 
   validation {
     condition     = alltrue([for cidr in var.additional_ssh_cidrs : try(can(cidrnetmask(cidr)) && endswith(cidr, "/32"), false)])
-    error_message = "Use one IPv4 address in /32 notation per additional operator."
+    error_message = "Use one public IPv4 address in /32 notation per additional operator."
   }
 }
 
-variable "app_cidrs" {
-  description = "IPv4 CIDRs allowed to reach the application directly. Empty means SSH tunnel only."
+variable "web_cidrs" {
+  description = "IPv4 CIDRs allowed to reach the public HTTP load balancer."
   type        = set(string)
-  nullable    = false
-  default     = []
+  default     = ["0.0.0.0/0"]
 
   validation {
-    condition     = alltrue([for cidr in var.app_cidrs : can(cidrnetmask(cidr)) && try(tonumber(split("/", cidr)[1]) > 0, false)])
-    error_message = "Use specific IPv4 CIDRs for app access. A /0 is not allowed."
+    condition     = alltrue([for cidr in var.web_cidrs : can(cidrnetmask(cidr))])
+    error_message = "Use valid IPv4 CIDRs for public web access."
   }
 }
 
 variable "container_port" {
-  description = "Host TCP port published by Docker Compose for the quiz API."
+  description = "Host TCP port published by Docker Compose and served by the load balancer."
   type        = number
-  nullable    = false
   default     = 8000
 
   validation {
@@ -77,29 +70,83 @@ variable "container_port" {
   }
 }
 
-variable "instance_type" {
-  description = "x86-64 EC2 instance type available in the selected region."
+variable "app_instance_type" {
+  description = "EC2 instance type for the private application server."
   type        = string
-  nullable    = false
+  default     = "t3.micro"
+}
+
+variable "bastion_instance_type" {
+  description = "EC2 instance type for the public SSH bastion."
+  type        = string
   default     = "t3.micro"
 }
 
 variable "ami_id" {
-  description = "Optional region-specific Ubuntu 24.04 amd64 AMI ID for a repeatable rebuild."
+  description = "Optional Ubuntu 24.04 amd64 AMI ID for the selected region."
   type        = string
   default     = null
 }
 
 variable "ssh_public_key_path" {
-  description = "Local path to your OpenSSH public key (.pub)."
+  description = "Local path to the OpenSSH public key installed on both instances."
   type        = string
-  nullable    = false
   default     = "~/.ssh/somaquiz.pub"
 }
 
 variable "additional_ssh_public_key_paths" {
-  description = "Local OpenSSH public key files to authorize alongside the EC2 launch key."
+  description = "Local public-key paths for additional SSH operators."
   type        = set(string)
   default     = []
-  nullable    = false
+}
+
+variable "database_name" {
+  description = "Initial PostgreSQL database name."
+  type        = string
+  default     = "somaquiz"
+
+  validation {
+    condition     = can(regex("^[A-Za-z][A-Za-z0-9_]{0,62}$", var.database_name))
+    error_message = "Use a PostgreSQL database name beginning with a letter and containing only letters, digits or underscores."
+  }
+}
+
+variable "database_username" {
+  description = "RDS master username; RDS generates and stores its password in Secrets Manager."
+  type        = string
+  default     = "somaquiz_admin"
+
+  validation {
+    condition     = can(regex("^[A-Za-z][A-Za-z0-9_]{0,62}$", var.database_username))
+    error_message = "Use a PostgreSQL username beginning with a letter and containing only letters, digits or underscores."
+  }
+}
+
+variable "database_instance_class" {
+  description = "RDS instance class for the managed PostgreSQL database."
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "database_storage_gb" {
+  description = "Encrypted PostgreSQL storage in GiB."
+  type        = number
+  default     = 20
+
+  validation {
+    condition     = var.database_storage_gb >= 20 && var.database_storage_gb <= 1000
+    error_message = "Use database storage between 20 and 1000 GiB."
+  }
+}
+
+variable "database_deletion_protection" {
+  description = "Prevent database deletion; turn off only for an intentional lab cleanup."
+  type        = bool
+  default     = false
+}
+
+variable "force_delete_ecr" {
+  description = "Allow Terraform to delete an ECR repository that still contains images."
+  type        = bool
+  default     = false
 }

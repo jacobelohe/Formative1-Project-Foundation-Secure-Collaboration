@@ -1,94 +1,95 @@
-# SomaQuiz infrastructure
+# SomaQuiz AWS infrastructure
 
-Terraform creates one VPC, one public subnet and an Ubuntu 24.04 EC2 instance for the SomaQuiz quiz API. The network module manages the subnet, internet gateway, routing and security groups. The host module manages the EC2 instance and imports your SSH public key. [Canonical Ubuntu AMI lookup](https://documentation.ubuntu.com/aws/aws-how-to/instances/build-cloudformation-templates/)
+Terraform provisions the Summative AWS foundation: a VPC, a private application VM, a public bastion, a public application load balancer, private PostgreSQL on RDS, and a private ECR repository. Networking, compute, database, registry and edge resources are separated into small modules.
 
-The host requires IMDSv2 and uses an encrypted 16 GiB gp3 root volume. SSH is restricted to approved public IPv4 addresses. Direct access to the quiz API is off by default. Outbound TCP ports 80 and 443 support OS updates and container pulls.
-
-## Prerequisites
-
-- Terraform 1.7 or newer, AWS CLI and OpenSSH.
-- An authenticated AWS profile with permissions to manage the EC2 and VPC resources, read EC2 instance type offerings, and read Canonical's public AMI parameter through `ssm:GetParameter`.
-- A region enabled in your AWS account that offers the selected x86-64 instance type. EC2, EBS and the public IPv4 address can incur charges.
-
-## Initialize and validate
-
-Run these commands in PowerShell from the repository root. Create the SSH key only if you do not already have a public key to use. When prompted, set a passphrase for the private key.
-
-```powershell
-New-Item -ItemType Directory -Force "$HOME/.ssh" | Out-Null
-ssh-keygen -t ed25519 -f "$HOME/.ssh/somaquiz"
-
-cd terraform
-Copy-Item example.tfvars terraform.tfvars
-notepad terraform.tfvars
+```mermaid
+flowchart LR
+  Users[Users] -->|HTTP 80| ALB[Public ALB<br/>two public subnets]
+  Operator[Operator / Ansible] -->|SSH 22 from approved /32| Bastion[Public bastion]
+  ALB -->|App port| App[Private EC2 app]
+  Bastion -->|SSH 22| App
+  App -->|PostgreSQL 5432| RDS[(Private RDS)]
+  App -->|HTTPS via NAT| ECR[Private ECR]
+  NAT[NAT gateway] --> Internet[Package sources]
+  App --> NAT
 ```
 
-Set `aws_region` to your chosen AWS region and `ssh_cidr` to the public IPv4 address of the machine running SSH or Ansible, followed by `/32`. If you use an existing key, set `ssh_public_key_path` to its `.pub` file. Keep the private key on your machine.
+## Security and operating choices
 
-For additional operators, set `additional_ssh_cidrs` to their public IPv4 addresses in `/32` notation and `additional_ssh_public_key_paths` to their local public key files. Cloud-init installs these keys at launch. Review the plan before changing the key list on an existing host because that change replaces the instance.
+- The application VM has no public IP. The ALB is its only web ingress; SSH reaches it through the bastion.
+- RDS sits in isolated private subnets and accepts PostgreSQL only from the application security group. RDS generates the master password and stores it in Secrets Manager. Terraform outputs only the secret ARN.
+- The app instance role can pull images only from this ECR repository. ECR uses immutable tags, push scanning, encryption at rest, and a small lifecycle policy.
+- Both instances require IMDSv2 and use encrypted gp3 root disks. SSH is limited to the configured operator `/32` addresses.
+- One NAT gateway keeps private hosts able to download OS packages and images while avoiding one NAT per AZ. The app and RDS are single-instance lab services, not highly available production tiers.
+- The public endpoint uses HTTP because no domain or TLS certificate is part of this repository. Restrict `web_cidrs` if the demo does not need public access.
+- The current quiz API loads questions in memory. RDS is provisioned for the Summative architecture; the application does not yet consume it.
 
-`container_port` defaults to `8000` to match the repository's Docker Compose host port. If you change it, use the same host port when deploying the container. If you need direct HTTP for a demo, set `app_cidrs` to the approved source CIDRs. For example, `app_cidrs = ["198.51.100.10/32"]` illustrates the format. Replace that address before use.
+The NAT gateway, load balancer, two EC2 instances, RDS, storage and public IPv4 addresses can incur AWS charges. Review the plan and current AWS pricing before applying. Do not leave the lab running when it is not needed.
+
+## Prerequisites and local inputs
+
+Install Terraform 1.7+, AWS CLI and OpenSSH. Use an AWS profile with permissions to create the resources in the plan. Generate or select an SSH key pair; keep the private key outside this repository.
+
+From the repository root in PowerShell:
 
 ```powershell
+Copy-Item terraform/example.tfvars terraform/terraform.tfvars
+notepad terraform/terraform.tfvars
+```
+
+Set `aws_region` to the AWS region you chose and `ssh_cidr` to the public IPv4 address of the Ansible controller or operator in `/32` notation. Set `ssh_public_key_path` if your public key is not `~/.ssh/somaquiz.pub`. Add each teammate who needs bastion access to both `additional_ssh_cidrs` and `additional_ssh_public_key_paths`. These values and key files are local and ignored by Git. Never add a private key or AWS credential to Terraform variables or this repository.
+
+`web_cidrs` defaults to `0.0.0.0/0` so the demo URL is reachable publicly. Set it to a smaller CIDR set when appropriate. The CIDR input must be `/16` through `/21` so Terraform can divide the VPC into five `/24` subnets.
+
+## Initialize, validate and plan
+
+Run in `terraform/`. Configure AWS credentials first; the example below checks which account Terraform would use.
+
+```powershell
+cd terraform
 terraform init
 terraform fmt -check -recursive
 terraform validate
 terraform test
-```
 
-The tests use a mocked AWS provider. They check the network rules and the Ansible handoff outputs without making AWS API calls.
-
-## Plan and apply
-
-Use the name of your configured profile in place of `your-profile`. You can omit the profile assignment when using the AWS CLI default profile. Verify that the AWS CLI reports the intended account before proceeding.
-
-If your CLI uses a browser-based `aws login` session, the pinned Terraform AWS provider can use it through a separate local profile. Add this section to `~/.aws/config`. Replace `default` in the command if your browser login uses a named profile. Then use `somaquiz-terraform` as `AWS_PROFILE` below. [AWS CLI credential export](https://docs.aws.amazon.com/cli/latest/reference/configure/export-credentials.html)
-
-```ini
-[profile somaquiz-terraform]
-credential_process = aws configure export-credentials --profile default --format process
-```
-
-```powershell
 $env:AWS_PROFILE = "your-profile"
 aws sts get-caller-identity
-
-terraform plan '-out=somaquiz.tfplan'
+terraform plan -out=somaquiz.tfplan
 terraform show somaquiz.tfplan
+```
+
+Confirm the returned AWS account is the intended one. Review every proposed create, update and replacement. This configuration moves the previous public application instance into a private subnet, so an existing app VM is expected to be replaced. The current VPC and original public subnet are kept at their existing Terraform addresses where possible. Do not apply a plan that proposes deleting resources or data you need to retain.
+
+After reviewing and approving the plan, apply it:
+
+```powershell
 terraform apply somaquiz.tfplan
 terraform output
 ```
 
-Use the saved plan only after reviewing the proposed resources. If you edit inputs after planning, create a new plan. Re-running `terraform plan` with the same inputs should show no changes unless a resource drifted or the latest Ubuntu AMI changed. Set `ami_id` to an approved Ubuntu 24.04 amd64 AMI in the selected region if you want to pin the image and control when the instance is replaced.
+Terraform state and saved plans can contain sensitive infrastructure details. Keep `terraform.tfstate`, backups, `.tfvars` files and `.tfplan` files private; the repository ignores them. This lab uses local state. For shared team use, migrate to an encrypted, versioned remote backend with locking.
 
-## Connect and hand off to Ansible
+## Outputs and Ansible connection
 
-```powershell
-$vmIp = terraform output -raw public_ip
-$vmUser = terraform output -raw ssh_user
-ssh -i "$HOME/.ssh/somaquiz" "$vmUser@$vmIp"
-```
+`application_url` is the public ALB URL. `ecr_repository_url` is the image destination. `app_private_ip`, `bastion_public_ip`, `app_instance_id`, and `ssh_user` are the Ansible connection values. `database_endpoint`, `database_port`, and `database_master_secret_arn` expose the private DB location and its managed credential reference without exposing the password.
 
-Use the corresponding private key path if you selected a different key. Allow time for EC2 and SSH to start. If SSH times out, check the EC2 instance status and confirm that `ssh_cidr` matches your current public IPv4 address.
-
-For Ansible, pass along `aws_region` and `instance_id` for dynamic discovery, or `public_ip` and `ssh_user` for the static inventory. Export the port and bind address with `terraform output -json ansible_vars`. Update the instance ID after a replacement, or refresh the public IP in the static inventory after a stop/start. [Ansible setup and verification](../ansible/README.md)
-
-Once Part 2 is deployed, access the API without opening its port to the internet. Keep this SSH session open, then run `curl.exe http://127.0.0.1:8000/health` from another terminal.
+SSH to the private host through the bastion (use the same key pair configured in Terraform):
 
 ```powershell
-$port = terraform output -raw container_port
-ssh -i "$HOME/.ssh/somaquiz" -N -L "8000:127.0.0.1:$port" "$vmUser@$vmIp"
+$bastion = terraform output -raw bastion_public_ip
+$app = terraform output -raw app_private_ip
+ssh -J "ubuntu@$bastion" "ubuntu@$app"
 ```
 
-## State and cleanup
+The Ansible inventory must target `app_private_ip` and set `ProxyJump` to the bastion. The colleague completing Part 2 should adapt the current static/dynamic inventory, which targets a public app host. The API must bind to `0.0.0.0` on the configured container port so the ALB can reach it. Terraform's `ansible_vars` output contains the non-secret host, port and bastion values.
 
-This lab uses local Terraform state. Keep state and plan files private and retain the state until cleanup. The provider lockfile `.terraform.lock.hcl` pins the provider version for the team. The repository ignores the Terraform working directory, state, local variables and saved plans.
+The ALB health check calls `/ready` and considers HTTP 200 healthy. After Part 2 deploys the container, verify `application_url` and check target health in the EC2 console. The managed database password is available only through the AWS-generated Secrets Manager secret; grant application access only if the service later needs it.
 
-When you finish the lab, preview deletion and destroy the stack with the same AWS profile, inputs and state you used to create it. Destroying the instance also deletes its root volume.
+## Cleanup
+
+Review the destruction plan before cleanup. Destroying RDS discards its data because this coursework stack skips a final snapshot. ECR deletion is blocked while images remain unless `force_delete_ecr = true` is deliberately enabled.
 
 ```powershell
 terraform plan -destroy
 terraform destroy
 ```
-
-For a shared environment, use a team-controlled encrypted and versioned remote backend with locking. [Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3)
