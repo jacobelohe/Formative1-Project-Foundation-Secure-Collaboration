@@ -1,0 +1,25 @@
+---
+# The helper exchanges the instance role for a registry token on each pull,
+# so no registry password is stored on the VM.
+- name: Install the ECR credential helper
+  ansible.builtin.apt:
+    name: amazon-ecr-credential-helper
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create the Docker client configuration directory
+  ansible.builtin.file:
+    path: /root/.docker
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Authenticate Docker to the private registry
+  ansible.builtin.copy:
+    content: "{{ {'credHelpers': {app_image.split('/')[0]: 'ecr-login'}} | to_nice_json }}\n"
+    dest: /root/.docker/config.json
+    owner: root
+    group: root
+    mode: "0600"

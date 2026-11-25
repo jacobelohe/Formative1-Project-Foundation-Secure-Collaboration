@@ -8,8 +8,8 @@ filters:
 hostnames:
   - instance-id
 compose:
-  ansible_host: public_ip_address
+  ansible_host: private_ip_address
   ansible_user: "'ubuntu'"
 groups:
-  webservers: "true"
+  app_server: "true"
 strict: true

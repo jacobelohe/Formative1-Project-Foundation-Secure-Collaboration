@@ -18,11 +18,12 @@ flowchart LR
 
 - The application VM has no public IP. The ALB is its only web ingress; SSH reaches it through the bastion.
 - RDS sits in isolated private subnets and accepts PostgreSQL only from the application security group. RDS generates the master password and stores it in Secrets Manager. Terraform outputs only the secret ARN.
-- The app instance role can pull images only from this ECR repository. ECR uses immutable tags, push scanning, encryption at rest, and a small lifecycle policy.
+- The app instance role can pull images only from this ECR repository and read only the database secret. ECR uses immutable tags, push scanning, encryption at rest, and a small lifecycle policy.
 - Both instances require IMDSv2 and use encrypted gp3 root disks. SSH is limited to the configured operator `/32` addresses.
 - One NAT gateway keeps private hosts able to download OS packages and images while avoiding one NAT per AZ. The app and RDS are single-instance lab services, not highly available production tiers.
 - The public endpoint uses HTTP because no domain or TLS certificate is part of this repository. Restrict `web_cidrs` if the demo does not need public access.
-- The current quiz API loads questions in memory. RDS is provisioned for the Summative architecture; the application does not yet consume it.
+- The quiz API stores quiz attempts in RDS. It reads the password from Secrets Manager with the instance role, so the app instance allows a second IMDS hop for its container.
+- GitHub Actions deploys through an OIDC role limited to the repository's `production` environment, this ECR repository and the bastion security group. Set `create_github_oidc_provider = false` if the account already has that provider.
 
 The NAT gateway, load balancer, two EC2 instances, RDS, storage and public IPv4 addresses can incur AWS charges. Review the plan and current AWS pricing before applying. Do not leave the lab running when it is not needed.
 
@@ -81,9 +82,9 @@ $app = terraform output -raw app_private_ip
 ssh -J "ubuntu@$bastion" "ubuntu@$app"
 ```
 
-The Ansible inventory must target `app_private_ip` and set `ProxyJump` to the bastion. The colleague completing Part 2 should adapt the current static/dynamic inventory, which targets a public app host. The API must bind to `0.0.0.0` on the configured container port so the ALB can reach it. Terraform's `ansible_vars` output contains the non-secret host, port and bastion values.
+The [Ansible inventory](../ansible/README.md) targets `app_private_ip` through the bastion. `scripts/configure-github.sh` copies these outputs to GitHub for the CD pipeline. The API must bind to `0.0.0.0` on the configured container port so the ALB can reach it. Terraform's `ansible_vars` output contains the non-secret host, port and bastion values.
 
-The ALB health check calls `/ready` and considers HTTP 200 healthy. After Part 2 deploys the container, verify `application_url` and check target health in the EC2 console. The managed database password is available only through the AWS-generated Secrets Manager secret; grant application access only if the service later needs it.
+The ALB health check calls `/ready` and considers HTTP 200 healthy. After the first deployment, verify `application_url` and check target health in the EC2 console. The managed database password is available only through the AWS-generated Secrets Manager secret.
 
 ## Cleanup
 

@@ -42,6 +42,18 @@ module "host" {
   ssh_public_key             = trimspace(file(pathexpand(var.ssh_public_key_path)))
   additional_ssh_public_keys = local.operator_keys
   ecr_repository_arn         = module.registry.repository_arn
+  database_secret_arn        = module.database.master_secret_arn
+}
+
+# GitHub Actions deploys with short-lived credentials from this role.
+module "cicd" {
+  source = "./modules/cicd"
+
+  name                       = local.service_name
+  create_oidc_provider       = var.create_github_oidc_provider
+  github_subject             = var.github_oidc_subject
+  ecr_repository_arn         = module.registry.repository_arn
+  bastion_security_group_arn = module.network.bastion_security_group_arn
 }
 
 module "database" {

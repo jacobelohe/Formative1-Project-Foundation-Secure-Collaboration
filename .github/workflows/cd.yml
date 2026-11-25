@@ -1,0 +1,180 @@
+name: Deploy to Production
+
+# Runs only when a commit reaches main, which branch protection limits to merged PRs.
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+# Deploy one commit at a time and never interrupt a deployment half way.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # 1. Every CI check (lint, tests, dependency, IaC and image scans) must pass first.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    permissions:
+      contents: read
+      id-token: write # exchange the GitHub OIDC token for short-lived AWS credentials
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY_URL: ${{ vars.ECR_REPOSITORY_URL }}
+      BASTION_HOST: ${{ vars.BASTION_HOST }}
+      BASTION_SECURITY_GROUP_ID: ${{ vars.BASTION_SECURITY_GROUP_ID }}
+      APP_HOST: ${{ vars.APP_HOST }}
+      APP_PORT: ${{ vars.APP_PORT }}
+      APP_URL: ${{ vars.APP_URL }}
+      APP_IMAGE: ${{ vars.ECR_REPOSITORY_URL }}:${{ github.sha }}
+      DB_HOST: ${{ vars.DB_HOST }}
+      DB_PORT: ${{ vars.DB_PORT }}
+      DB_NAME: ${{ vars.DB_NAME }}
+      DB_SECRET_ARN: ${{ vars.DB_SECRET_ARN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check that the production environment is configured
+        env:
+          AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          missing=0
+          for name in AWS_ROLE_ARN SSH_PRIVATE_KEY SSH_KNOWN_HOSTS AWS_REGION ECR_REPOSITORY_URL \
+            BASTION_HOST BASTION_SECURITY_GROUP_ID APP_HOST APP_PORT APP_URL \
+            DB_HOST DB_PORT DB_NAME DB_SECRET_ARN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name is not set in the production environment. Run scripts/configure-github.sh."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      # 2. Build, scan and push the image, tagged with the commit SHA.
+      - name: Authenticate to AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Log in to the private ECR registry
+        run: |
+          aws ecr get-login-password |
+            docker login --username AWS --password-stdin "${ECR_REPOSITORY_URL%%/*}"
+
+      # ECR tags are immutable, so re-running a deployment reuses the image already pushed.
+      - name: Check whether this commit is already in ECR
+        id: ecr
+        run: |
+          if output=$(aws ecr describe-images --repository-name "${ECR_REPOSITORY_URL#*/}" \
+            --image-ids imageTag="$GITHUB_SHA" 2>&1); then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif grep -q ImageNotFoundException <<< "$output"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "$output" >&2
+            exit 1
+          fi
+
+      - name: Build image
+        if: steps.ecr.outputs.exists == 'false'
+        run: docker build --tag "$APP_IMAGE" .
+
+      # CI scans its own build; scan the exact image that will be released too.
+      - name: Scan release image with Trivy
+        if: steps.ecr.outputs.exists == 'false'
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.APP_IMAGE }}
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH
+
+      - name: Push image to ECR
+        if: steps.ecr.outputs.exists == 'false'
+        run: docker push "$APP_IMAGE"
+
+      # 3. Deploy with Ansible through the bastion.
+      - name: Install Ansible
+        run: |
+          pipx install --force 'ansible-core>=2.20,<2.22'
+          ansible-galaxy collection install -r ansible/requirements.yml
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KNOWN_HOSTS" | tr -d '\r' >> ~/.ssh/known_hosts
+          eval "$(ssh-agent -s)"
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> "$GITHUB_ENV"
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> "$GITHUB_ENV"
+
+      # The bastion accepts SSH only from approved /32 addresses. Add this runner's
+      # address for the length of the deployment; the last step removes it again.
+      - name: Open bastion SSH for this runner
+        run: |
+          runner_ip=$(curl -fsS4 --retry 3 https://checkip.amazonaws.com)
+          echo "RUNNER_CIDR=$runner_ip/32" >> "$GITHUB_ENV"
+          if ! output=$(aws ec2 authorize-security-group-ingress \
+            --group-id "$BASTION_SECURITY_GROUP_ID" \
+            --protocol tcp --port 22 --cidr "$runner_ip/32" 2>&1); then
+            grep -q InvalidPermission.Duplicate <<< "$output" || { echo "$output" >&2; exit 1; }
+          fi
+
+      - name: Deploy with Ansible
+        working-directory: ansible
+        run: |
+          ansible app_server -m ansible.builtin.wait_for_connection -a 'timeout=120'
+          ansible-playbook deploy.yml
+
+      # 4. Confirm from the internet that the load balancer serves this commit.
+      - name: Verify the live application
+        run: |
+          for attempt in $(seq 1 30); do
+            commit=$(curl -fsS --max-time 10 "$APP_URL/version" | jq -r '.commit // empty') || commit=""
+            ready=$(curl -fsS --max-time 10 "$APP_URL/ready") || ready=""
+            database=$(jq -r '.database // empty' <<< "$ready") || database=""
+            if [ "$commit" = "$GITHUB_SHA" ] && [ "$database" = "connected" ]; then
+              echo "Live on $APP_URL: $ready"
+              exit 0
+            fi
+            echo "Attempt $attempt: commit '${commit:-none}', database '${database:-none}'"
+            sleep 5
+          done
+          echo "::error::$APP_URL does not serve $GITHUB_SHA with a connected database"
+          exit 1
+
+      - name: Close bastion SSH for this runner
+        if: always() && env.RUNNER_CIDR != ''
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id "$BASTION_SECURITY_GROUP_ID" \
+            --protocol tcp --port 22 --cidr "$RUNNER_CIDR"
+
+      - name: Summarise the deployment
+        if: always()
+        run: |
+          {
+            echo "## Deployment ${{ job.status }}"
+            echo ""
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Image: \`$APP_IMAGE\`"
+            echo "- Application: $APP_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

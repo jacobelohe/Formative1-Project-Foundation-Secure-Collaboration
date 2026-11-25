@@ -3,6 +3,9 @@
   ansible.builtin.apt:
     name:
       - ca-certificates
+      - curl
+      - git
+      - gnupg
       - python3-debian
     state: present
 
@@ -34,7 +37,7 @@
     architectures: amd64
     signed_by: /etc/apt/keyrings/docker.asc
     state: present
-  register: docker_repository
+  register: docker_runtime_repository
 
 - name: Install Docker and Docker Compose plugin
   ansible.builtin.apt:
@@ -46,7 +49,7 @@
       - docker-compose-plugin
     state: present
     update_cache: true
-    cache_valid_time: "{{ 0 if docker_repository.changed else 3600 }}"
+    cache_valid_time: "{{ 0 if docker_runtime_repository.changed else 3600 }}"
   when: not ansible_check_mode
 
 - name: Ensure Docker service is running and enabled

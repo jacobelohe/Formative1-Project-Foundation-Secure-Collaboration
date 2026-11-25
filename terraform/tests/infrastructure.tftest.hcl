@@ -61,6 +61,41 @@ run "private_stack_handoff" {
   }
 }
 
+run "deploy_role_trusts_only_the_production_environment" {
+  command = apply
+
+  module {
+    source = "./modules/cicd"
+  }
+
+  variables {
+    name                       = "somaquiz-test"
+    create_oidc_provider       = true
+    github_subject             = "repo:owner@1/repo@2:environment:production"
+    ecr_repository_arn         = "arn:aws:ecr:us-east-1:123456789012:repository/somaquiz-test"
+    bastion_security_group_arn = "arn:aws:ec2:us-east-1:123456789012:security-group/sg-bastion"
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_iam_role.deploy.assume_role_policy).Statement[0].Condition.StringEquals["token.actions.githubusercontent.com:sub"] == var.github_subject &&
+      jsondecode(aws_iam_role_policy.deploy.policy).Statement[1].Resource == var.ecr_repository_arn &&
+      jsondecode(aws_iam_role_policy.deploy.policy).Statement[2].Resource == var.bastion_security_group_arn
+    )
+    error_message = "The deploy role must trust one subject and reach only this registry and the bastion security group."
+  }
+}
+
+run "reject_wildcard_github_subject" {
+  command = plan
+
+  variables {
+    github_oidc_subject = "repo:owner/*"
+  }
+
+  expect_failures = [var.github_oidc_subject]
+}
+
 run "reject_open_ssh" {
   command = plan
 

@@ -44,3 +44,7 @@ variable "additional_ssh_public_keys" {
 variable "ecr_repository_arn" {
   type = string
 }
+
+variable "database_secret_arn" {
+  type = string
+}

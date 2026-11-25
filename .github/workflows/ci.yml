@@ -7,6 +7,8 @@ on:
     branches-ignore:
       - main
   pull_request:
+  # cd.yml runs these same checks before every deployment.
+  workflow_call:
 
 # Least privilege: the workflow token can only read the repository.
 permissions:

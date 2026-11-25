@@ -1,0 +1,58 @@
+---
+# Configure the private application VM and deploy one image release to it.
+# Connection and release values come from environment variables; see ansible/README.md.
+- name: Verify the deployment inputs
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Require exactly one SomaQuiz host
+      ansible.builtin.assert:
+        that: groups.get('app_server', []) | length == 1
+        fail_msg: The inventory must contain exactly one host in app_server.
+
+    - name: Require the release and connection settings
+      ansible.builtin.assert:
+        that: lookup('ansible.builtin.env', item) | length > 0
+        fail_msg: "Set the {{ item }} environment variable before deploying."
+        quiet: true
+      loop:
+        - BASTION_HOST
+        - APP_HOST
+        - APP_IMAGE
+        - AWS_REGION
+        - DB_HOST
+        - DB_NAME
+        - DB_SECRET_ARN
+
+- name: Deploy Application to Production
+  hosts: app_server
+  become: true
+  force_handlers: true
+  vars:
+    app_port: "{{ lookup('ansible.builtin.env', 'APP_PORT') | default('8000', true) }}"
+    # The load balancer reaches the published port; the security group admits nothing else.
+    app_bind_address: 0.0.0.0
+    app_dest_dir: /opt/somaquiz
+    app_env: production
+    app_image: "{{ lookup('ansible.builtin.env', 'APP_IMAGE') }}"
+    aws_region: "{{ lookup('ansible.builtin.env', 'AWS_REGION') }}"
+    db_host: "{{ lookup('ansible.builtin.env', 'DB_HOST') }}"
+    db_port: "{{ lookup('ansible.builtin.env', 'DB_PORT') | default('5432', true) }}"
+    db_name: "{{ lookup('ansible.builtin.env', 'DB_NAME') }}"
+    db_secret_arn: "{{ lookup('ansible.builtin.env', 'DB_SECRET_ARN') }}"
+
+  pre_tasks:
+    - name: Check that the target matches the Terraform Ubuntu host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'Ubuntu'
+          - ansible_facts.distribution_version == '24.04'
+          - ansible_facts.architecture == 'x86_64'
+        fail_msg: Use the Ubuntu 24.04 amd64 EC2 host provisioned by Terraform.
+
+  roles:
+    - host_security
+    - docker_runtime
+    - ecr_login
+    - somaquiz
