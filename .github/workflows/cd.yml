@@ -111,7 +111,11 @@ jobs:
       # 3. Deploy with Ansible through the bastion.
       - name: Install Ansible
         run: |
-          pipx install --force 'ansible-core>=2.20,<2.22'
+          # The runner ships its own Ansible, so install the pinned range in a separate environment.
+          python3 -m venv "$RUNNER_TEMP/ansible"
+          export PATH="$RUNNER_TEMP/ansible/bin:$PATH"
+          echo "$RUNNER_TEMP/ansible/bin" >> "$GITHUB_PATH"
+          pip install --quiet 'ansible-core>=2.20,<2.22'
           ansible-galaxy collection install -r ansible/requirements.yml
 
       - name: Configure SSH
