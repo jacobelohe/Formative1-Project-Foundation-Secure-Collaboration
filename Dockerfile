@@ -23,9 +23,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final runtime environment
 FROM python:3.12-slim
 
-# Apply the Debian security update for zlib1g before adding the application.
+# Apply all available Debian security updates before adding the application.
+# This fixed zlib1g (CVE-2026-76844, CVE-2026-85091) and libzstd1 (CVE-2026-124851).
 RUN apt-get update \
-    && apt-get install --only-upgrade -y zlib1g \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for the application
