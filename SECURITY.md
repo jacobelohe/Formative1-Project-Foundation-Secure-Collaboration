@@ -8,7 +8,7 @@ CI runs three security scans: `pip-audit` checks the Python requirements, Trivy 
 
 A baseline `pip-audit -r services/quiz-api/requirements-dev.txt` run on 11 November 2026 reported no known vulnerabilities in the runtime or development requirements at that time. The development requirements include the runtime requirements, and both files allow version ranges, so findings can change as new package versions or advisories become available.
 
-The first Trivy image scans on 11 November 2026 found two `HIGH` vulnerabilities in Debian's `zlib1g` package: CVE-2026-76844 and CVE-2026-85091. Trivy reported the fixed package version as `1:1.3.dfsg+really1.3.1-1+deb13u1`. The Dockerfile now updates `zlib1g` from Debian's package repository before building the runtime image. The push and pull-request image scans passed after the update on 13 November 2026. Continue scanning because the base image and vulnerability database can change.
+The first Trivy image scans on 11 November 2026 found two `HIGH` vulnerabilities in Debian's `zlib1g` package: CVE-2026-76844 and CVE-2026-85091. Trivy reported the fixed package version as `1:1.3.dfsg+really1.3.1-1+deb13u1`. The Dockerfile now updates `zlib1g` from Debian's package repository before building the runtime image. The push and pull-request image scans passed after the update on 13 November 2026. On 25 November 2026 the release scan found a third `HIGH` vulnerability, CVE-2026-124851 in `libzstd1`, which stopped the first deployment. The Dockerfile now applies all available Debian security updates instead of upgrading one package at a time. Continue scanning because the base image and vulnerability database can change.
 
 ### Terraform configuration
 
