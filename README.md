@@ -11,7 +11,7 @@
 
 ## Video Demo
 
-**Pending.** Add the YouTube (unlisted) or Google Drive link here.
+[Watch the demo video](https://drive.google.com/drive/folders/12WplrfC6lsAXrpigdmr6jyMuEHke4UK_?usp=sharing) (Google Drive folder).
 
 ---
 
