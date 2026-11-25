@@ -19,7 +19,7 @@
 
 > **[👉 View Team Participation Sheet](https://docs.google.com/spreadsheets/d/1T84KL2_JWtcByxihPB16qP5hJUZ8BI4qkjxJ-HTExCI/edit?usp=sharing)**
 >
-> 📎 Local copy: [SomaQuiz Team Task Sheet - Advanced DevOps.xlsx](SomaQuiz%20Team%20Task%20Sheet%20-%20Advanced%20DevOps.xlsx)
+> 📎 Local copy: [SomaQuiz Team Task Sheet - Final Project.xlsx](SomaQuiz%20Team%20Task%20Sheet%20-%20Final%20Project.xlsx)
 
 ---
 
