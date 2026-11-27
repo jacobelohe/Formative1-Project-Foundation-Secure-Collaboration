@@ -109,7 +109,6 @@ resource "aws_security_group" "bastion" {
   name        = "${var.name}-bastion"
   description = "Bastion SSH access"
   vpc_id      = aws_vpc.app.id
-  egress      = []
   tags        = { Name = "${var.name}-bastion" }
 }
 
@@ -117,7 +116,6 @@ resource "aws_security_group" "app" {
   name        = "${var.name}-app"
   description = "Private application host"
   vpc_id      = aws_vpc.app.id
-  egress      = []
   tags        = { Name = "${var.name}-app" }
 }
 
@@ -125,7 +123,6 @@ resource "aws_security_group" "alb" {
   name        = "${var.name}-web"
   description = "Public HTTP entry point"
   vpc_id      = aws_vpc.app.id
-  egress      = []
   tags        = { Name = "${var.name}-web" }
 }
 
